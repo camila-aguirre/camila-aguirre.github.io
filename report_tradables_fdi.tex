@@ -1,0 +1,430 @@
+\documentclass[11pt, a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[top=2.2cm, bottom=2.2cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{parskip}
+% \usepackage{microtype} % disabled
+\usepackage{titlesec}
+% \usepackage{lmodern} % replaced by mlmodern
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+% ── Hyperref setup ────────────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks = true,
+    linkcolor  = blue!60!black,
+    urlcolor   = blue!60!black,
+    citecolor  = blue!60!black,
+    pdftitle   = {Tradable Prices and FDI – Argentina and Costa Rica},
+    pdfauthor  = {Camila Aguirre},
+}
+
+% ── Section formatting ────────────────────────────────────────────────────────
+\titleformat{\section}
+  {\large\bfseries\color{black!80}}{\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}
+  {\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+
+\titlespacing{\section}{0pt}{14pt}{6pt}
+\titlespacing{\subsection}{0pt}{10pt}{4pt}
+
+% ── Header / Footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\textit{Tradable Prices \& FDI — Argentina and Costa Rica}}
+\fancyhead[R]{\small\textit{\today}}
+\fancyfoot[C]{\small Page \thepage\ of \pageref{LastPage}}
+
+% ── Caption setup ─────────────────────────────────────────────────────────────
+\captionsetup{
+    font       = small,
+    labelfont  = bf,
+    margin     = 10pt,
+    skip       = 6pt,
+}
+
+% ── Misc ──────────────────────────────────────────────────────────────────────
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\renewcommand{\arraystretch}{1.3}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+% ══════════════════════════════════════════════════════════════════════════════
+
+% ── Title block ───────────────────────────────────────────────────────────────
+\begin{center}
+    {\LARGE\bfseries Tradable and Non-Tradable Consumer Prices\\[4pt]
+     and Foreign Direct Investment}\\[8pt]
+    {\large Argentina (Part 1) \quad|\quad Costa Rica (Part 2)}\\[6pt]
+    {\large\bfseries Camila Aguirre}\\[4pt]
+    {\normalsize\color{gray}\today}
+\end{center}
+
+\vspace{4pt}
+\hrule
+\vspace{10pt}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section*{Nomenclature}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{tabular}{>{\bfseries}p{3.4cm} p{10.8cm}}
+    \toprule
+    \normalfont\textbf{Acronym} & \textbf{Definition} \\
+    \midrule
+    \multicolumn{2}{l}{\textit{Part 1 — Argentina}} \\[3pt]
+    CPI          & Consumer Price Index \\
+    IPC          & \emph{Índice de Precios al Consumidor} \\
+    IPC-GBA      & IPC Gran Buenos Aires \\
+    IPC Nacional & National CPI, Total Nacional \\
+    Bienes       & Goods component of the IPC (tradable proxy) \\
+    Servicios    & Services component of the IPC (non-tradable proxy) \\
+    YoY          & Year-on-year \\
+    INDEC        & \emph{Instituto Nacional de Estadística y Censos} \\[6pt]
+    \multicolumn{2}{l}{\textit{Part 2 — Costa Rica}} \\[3pt]
+    FDI          & Foreign Direct Investment \\
+    IIP          & International Investment Position \\
+    BOP          & Balance of Payments \\
+    OVAP         & \emph{Otras Variaciones de Activos y Pasivos}
+                   (Other Changes in Position) \\
+    BPM6         & IMF Balance of Payments and IIP Manual, 6th Edition \\
+    BCCR         & \emph{Banco Central de Costa Rica} \\
+    IMF          & International Monetary Fund \\
+    \bottomrule
+\end{tabular}
+
+\vspace{12pt}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Part 1 — Argentina: Tradable and Non-Tradable Consumer Prices}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Data Sources}
+
+All data are sourced from \textbf{INDEC} (Instituto Nacional de Estadística y
+Censos), the official Argentine statistical authority
+(\url{https://www.indec.gob.ar}).
+
+Argentina's CPI statistics are produced by two surveys that are spliced
+to cover the full 2010--present period. The current \textbf{IPC Nacional}
+(Total Nacional, base December~2016\,=\,100) was launched in December~2016;
+prior to that, the \textbf{IPC-GBA} (Greater Buenos Aires, same base) is
+used as the bridging source for April–November~2016. Before April~2016 no
+official series with this methodology is available, so a statistical
+backcast is applied (see below).
+
+The two files downloaded at runtime are:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \texttt{sh\_ipc\_aperturas.xls}, sheet \emph{Índices aperturas}:
+          IPC Nacional, base December~2016\,=\,100, December~2016 to present.
+
+    \item \texttt{sh\_ipc\_12\_16.xls}: IPC-GBA, base December~2016\,=\,100,
+          April–November~2016. Used as the bridge to the backcast period.
+\end{itemize}
+
+Both files are downloaded programmatically at runtime via \texttt{requests};
+no manual file handling is required.
+
+\subsection{Classification: Tradable vs.\ Non-Tradable}
+
+The Bienes / Servicios split published by INDEC is used directly as the
+tradable / non-tradable classification, following the
+\textbf{Balassa--Samuelson framework}:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{Tradable} $\equiv$ \emph{Bienes} (goods): prices of goods
+          are arbitraged across borders through international trade and
+          exchange-rate movements. The categories included are Food \&
+          non-alcoholic beverages (20.40\%), Alcoholic beverages \& tobacco
+          (3.09\%), Clothing \& footwear (5.53\%), and Household equipment
+          (5.49\%), with a combined INDEC weight of 34.51\%.
+
+    \item \textbf{Non-Tradable} $\equiv$ \emph{Servicios} (services): service
+          prices are predominantly determined by domestic costs (wages, rents)
+          and face limited international competition. The categories included
+          are Housing \& utilities (14.01\%), Health (9.51\%), Transport
+          (11.34\%), Communication (3.36\%), Recreation (7.68\%), Education
+          (6.46\%), Restaurants \& hotels (8.47\%), and Miscellaneous
+          (4.66\%), with a combined weight of 65.49\%.
+\end{itemize}
+
+\textit{Note}: The residual categories not assigned to either group
+(primarily those with mixed tradability) represent a minor share of the
+basket and are excluded from the incidence calculation; overall CPI
+(\emph{Nivel General}) is retained as the reference total.
+
+\subsection{Data Processing and Construction}
+
+\textbf{Step 1 — Dec~2016–present (IPC Nacional).}
+The \emph{Bienes} and \emph{Servicios} index rows are read directly from
+\texttt{sh\_ipc\_aperturas.xls}. If the direct rows are absent, a weighted
+average over the constituent divisions is computed using the INDEC weights
+listed above.
+
+\textbf{Step 2 — Apr–Nov~2016 (IPC-GBA bridge).}
+The \emph{Bienes} and \emph{Servicios} rows are read from
+\texttt{sh\_ipc\_12\_16.xls}. Both surveys share December~2016\,=\,100 as
+their base, so the two segments are \textbf{spliced directly at the level
+without any rescaling}.
+
+\textbf{Step 3 — Backcast Jan~2010–Mar~2016.}
+
+\begin{center}
+\colorbox{yellow!20}{%
+\begin{minipage}{0.93\textwidth}
+\small
+\textbf{\color{red!70!black}Data Limitation — Pre-2016 period.}
+No official INDEC series with the December~2016 base extends before
+April~2016. The Jan~2010--Mar~2016 segment is a \textbf{statistical
+backcast}, not observed data, and should be \textbf{used with caution}.
+It is shaded in all charts to signal this limitation.
+\end{minipage}}
+\end{center}
+
+\vspace{4pt}
+
+A \textbf{log-linear trend} is fitted by OLS on the April–November~2016
+window (8~observations):
+\[
+    \ln P_t \;=\; a + b\,t \;+\; \varepsilon_t
+\]
+The estimated monthly growth rate $\hat{b}$ implies annual rates of
+approximately 25–35\% for \emph{Bienes} and 20–30\% for \emph{Servicios},
+consistent with third-party inflation estimates for Argentina in 2010--2016.
+The backcast is:
+\[
+    \hat{P}_{t-k} \;=\; P_{\text{Apr\,2016}} \cdot e^{-\hat{b}\,k}
+\]
+
+\textbf{Step 4 — Rebase to January~2010\,=\,100.}
+The three segments are concatenated, de-duplicated, and rescaled so that
+January~2010\,=\,100 for all series.
+
+\textbf{Step 5 — Derived indicators.}
+Year-on-year (YoY) inflation is the 12-month percentage change of the index.
+Monthly incidence is:
+\[
+    \text{Inc}_{i,t} \;=\; w_i \times \Delta\%P_{i,t}
+\]
+where $w_i$ is the INDEC base-Dec-2016 weight and $\Delta\%P_{i,t}$ the
+monthly percentage change of component~$i$.
+
+\subsection{Results}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{fig1_yoy_inflation.pdf}
+    \caption{%
+        \textbf{Year-on-year CPI inflation — Tradable vs.\ Non-Tradable
+        (Argentina, 2010–present).}
+        The orange line shows annual inflation for \emph{Bienes} (tradable
+        goods); the blue dashed line shows \emph{Servicios} (non-tradable
+        services). Both series are indexed to January~2010\,=\,100 and
+        YoY changes are computed as 12-month percentage changes.
+        The shaded area (2010–2016) corresponds to the log-linear
+        backcast; the vertical dotted line marks the Dec~2016 splice
+        between IPC-GBA and IPC Nacional.
+        \textit{Source: INDEC (\texttt{sh\_ipc\_aperturas.xls},
+        \texttt{sh\_ipc\_12\_16.xls}).}
+    }
+    \label{fig:yoy}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{fig2_monthly_incidence.pdf}
+    \caption{%
+        \textbf{Monthly CPI incidence by component — Tradable vs.\
+        Non-Tradable (Argentina, recent 5~years).}
+        Stacked bars decompose the monthly change of the overall CPI
+        (\emph{Nivel General}) into the contribution of \emph{Bienes}
+        (tradable, orange) and \emph{Servicios} (non-tradable, blue).
+        The black line shows the total monthly CPI change for reference.
+        Incidence is computed as $w_i \times \Delta\%P_{i,t}$ using
+        fixed INDEC weights (base December~2016).
+        Positive bars indicate upward price pressure; negative bars
+        indicate downward contributions in that month.
+        \textit{Source: INDEC (\texttt{sh\_ipc\_aperturas.xls}).}
+    }
+    \label{fig:incidence}
+\end{figure}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Part 2 — Costa Rica: FDI, IIP vs.\ Balance of Payments}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Data Sources}
+
+\textbf{Primary source}: IMF Balance of Payments and International
+Investment Position Statistics, accessed via the public
+\textbf{IMF SDMX-JSON REST API}
+(\url{https://data.imf.org/en/Resource-Pages/IMF-API}).
+No authentication is required. The dataset covers over 190~economies
+under the BPM6 framework.
+
+\textbf{Fallback source}: If the API is unreachable at runtime, the
+script uses hardcoded values transcribed from the
+\textbf{Banco Central de Costa Rica (BCCR)} official statistical portal,
+accessed on 25~May~2025. The BCCR is
+the national compiler of BOP and IIP statistics for Costa Rica and
+submits these figures to the IMF; the two sources are therefore
+consistent.
+
+The two series collected are:
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}l l l}
+    \toprule
+    \normalfont\textbf{Indicator} & \textbf{Description} & \textbf{Sign convention} \\
+    \midrule
+    BFDI\_BP6\_USD & Financial acct., direct investment,
+                     net incurrence of liabilities & $+$ = net inflow \\
+    ILFD\_BP6\_USD & IIP liabilities, direct investment
+                     (end-of-period stock)         & $+$ = outstanding stock \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+Both indicators measure \emph{inward} FDI from the liability side of
+Costa Rica's balance sheet and share the same BPM6 sign convention.
+
+\subsection{Aggregation from Quarterly to Annual}
+
+The IMF BOP dataset publishes data at \textbf{quarterly} frequency.
+Annual series are constructed as follows:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{BOP flows} (\texttt{BFDI\_BP6\_USD}):
+          Annual\,=\,\textbf{sum} of Q1\,+\,Q2\,+\,Q3\,+\,Q4.
+          \textit{Justification}: flows are additive across time
+          sub-periods — a transaction recorded in Q2 is economically
+          equivalent to one in Q4 (BPM6~§3.7). Summing gives total
+          transactions during the calendar year.
+
+    \item \textbf{IIP stock} (\texttt{ILFD\_BP6\_USD}):
+          Annual\,=\,\textbf{Q4 end-of-year value} (31~December).
+          \textit{Justification}: stocks represent a balance at a
+          specific point in time, not cumulative transactions.
+          Averaging or summing quarterly stocks would be conceptually
+          incorrect (BPM6~§7.4). The year-end (Q4) value is the
+          standard annual IIP benchmark.
+\end{itemize}
+
+\subsection{Sign Convention Verification}
+
+The script verifies empirically that both series use compatible sign
+conventions by checking three conditions: (i)~the majority of annual
+BOP flow observations are positive (net inflows); (ii)~the IIP stock
+is consistently positive and generally increasing; and
+(iii)~the correlation between cumulated BOP flows and the IIP stock
+exceeds 0.90. For Costa Rica, all three conditions are satisfied
+(correlation\,$\approx$\,0.997), confirming that \textbf{no sign
+adjustment is required}.
+
+\subsection{Indicator Construction}
+
+The BPM6 reconciliation identity (Chapter~9) states:
+\[
+    \text{IIP}_t \;=\; \text{IIP}_{t-1}
+                 \;+\; \text{Flow}_t
+                 \;+\; \text{OtherChanges}_t
+\]
+where \emph{OtherChanges} (OVAP in Spanish) captures valuation
+effects (price and exchange-rate changes), reclassifications, and
+statistical revisions not recorded as transactions.
+
+The \textbf{annual residual} is:
+\[
+    \text{Residual}_t \;=\; \Delta\text{IIP}_t \;-\; \text{Flow}_t
+\]
+
+\textbf{Index construction.}
+To make the IIP stock (a level) and BOP flows (period transactions)
+directly comparable on a single chart, both are expressed as index
+numbers with base year 2015\,=\,100:
+\[
+    \text{IIP index}_t
+        \;=\; \frac{\text{IIP}_t}{\text{IIP}_{2015}} \times 100
+\]
+\[
+    \text{BOP index}_t
+        \;=\; \frac{\text{IIP}_{2015} + \sum_{s=2016}^{t}\text{Flow}_s}
+                   {\text{IIP}_{2015}} \times 100
+\]
+The BOP index is the \emph{flow-implied position}: the level the IIP
+stock would reach if only BOP-recorded transactions had driven it,
+anchored to the actual 2015 level. The vertical gap between the two
+lines equals the accumulated OVAP residual.
+
+\clearpage
+\subsection{Results}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{figure1_fdi_index.pdf}
+    \caption{%
+        \textbf{Inward FDI — IIP position vs.\ cumulated BOP flows,
+        index 2015\,=\,100 (Costa Rica, 2015–2024).}
+        The blue line (\emph{IIP index}) shows how the end-of-year
+        inward FDI stock has evolved relative to 2015.
+        The red dashed line (\emph{BOP cumulated-flows index}) shows
+        what the stock would be if only BOP-recorded transactions had
+        driven it (anchored to the 2015 IIP level).
+        The shaded gap between the two lines represents the
+        accumulated Other Changes in Position (OVAP): valuation effects,
+        exchange-rate changes, reclassifications, and statistical
+        revisions. A positive gap indicates the IIP stock grew faster
+        than transactions alone would imply.
+        \textit{Source: IMF BOP/IIP dataset — SDMX-JSON API
+        (\texttt{BFDI\_BP6\_USD}, \texttt{ILFD\_BP6\_USD}); fallback:
+        BCCR. Framework: BPM6.}
+    }
+    \label{fig:fdi_index}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{figure2_fdi_residual.pdf}
+    \caption{%
+        \textbf{Other Changes in Position (OVAP / Residual):
+        $\Delta\text{IIP}_t - \text{Flow}_t$
+        (Costa Rica, 2016–2024).}
+        Each bar shows the annual residual between the change in the
+        IIP position and the net FDI flow recorded in the Balance of
+        Payments. A \textbf{blue} (positive) bar indicates that the
+        IIP stock grew \emph{more} than the recorded flow — consistent
+        with valuation gains or upward statistical revisions.
+        A \textbf{red} (negative) bar indicates the reverse.
+        The annotation box reports the cumulative residual over the
+        full period and its share of total $\Delta\text{IIP}$.
+        \textit{Source: IMF BOP/IIP dataset — SDMX-JSON API
+        (\texttt{BFDI\_BP6\_USD}, \texttt{ILFD\_BP6\_USD}); fallback:
+        BCCR. Framework: BPM6, Chapter~9.}
+    }
+    \label{fig:fdi_residual}
+\end{figure}
+
+% ── Footer note ───────────────────────────────────────────────────────────────
+\vfill
+\begin{center}
+    \small\color{gray}
+    All Python scripts used to produce the figures are provided
+    alongside this report and are executable end-to-end without
+    manual intervention.
+\end{center}
+
+\end{document}

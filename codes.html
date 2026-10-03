@@ -96,6 +96,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/r.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/stata.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/latex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
 </head>
 <body>
 
@@ -3815,247 +3817,7 @@ graph export &quot;$Graph/bland_altman_regions_weekly.png&quot;, replace width(2
       </details>
     </div>
     <div class="code">
-      <h3>3. Onset Timing across Four Rainfall Products</h3>
-      <p>Raincloud-style plot comparing the distribution of rainy-season onset dates from CHIRPS, GSMaP, MSWEP and TAMSAT across villages, 2010–2023, with dates collapsed to a common season.</p>
-      <p><span class="tag">Stata</span><span class="tag">Data visualisation</span><span class="tag">Onset</span></p>
-      <details class="code-details">
-        <summary>Show code</summary>
-        <div class="code-actions">
-          <a href="rwi_4_onset_raincloud.do" download>Download .do</a>
-          <button type="button" class="copy-btn" data-target="code-r4">Copy code</button>
-        </div>
-        <pre class="code-box"><code id="code-r4" class="language-stata">////////////////////////////////////////////////////////////////////
-// HORIZONTAL RAINCLOUD - SEASONAL DISTRIBUTION OF ONSET (DAY-OF-YEAR)
-// Rows: CHIRPS, GSMAP, MSWEP, TAMSAT - SINGLE PLOT 2010-2023
-// X axis: day within the rainy season (not raw calendar date)
-// VERSION: DISTRIBUTION ONLY (no boxplot)
-////////////////////////////////////////////////////////////////////
-
-*** FIRST ONSET ANALYSIS VARIABLE
-clear all
-version 16.1
-set more off
-capture log close
-
-////////////////////////////////
-// 0. GLOBALS
-////////////////////////////////
-
-global dir &quot;.&quot;   // change to your project folder
-	global data &quot;$dir/DATA&quot;
-	global res &quot;$dir/RESULTS&quot;
-	global log &quot;$dir/LOGS&quot;
-	global Graph &quot;$dir/GRAPHS&quot;
-
-	set more off
-
-////////////////////////////////
-// DATA PREPARATION
-////////////////////////////////
-
-use &quot;$data/temp_irregular_rainfall_data_treated_merged_2010-2024&quot;, replace
-
-keep if inrange(year_original, 2010, 2023)
-
-bysort ea_id: egen aez_fill = min(AEZ)
-replace AEZ = aez_fill if missing(AEZ)
-drop aez_fill
-
-collapse (first) first_onset first_onset_chirps first_onset_gsmap first_onset_mswep first_onset_tamsat AEZ , by(ea_id year_original)
-
-label define aez_lbl 1 &quot;Groundnut Basin&quot; ///
-                     2 &quot;Senegal River Valley&quot; ///
-                     3 &quot;Casamance&quot; ///
-                     4 &quot;Central &amp; Southeast&quot; ///
-                     5 &quot;Pastoral Zone&quot;
-
-label values AEZ aez_lbl
-
-* ==========================================================
-* 2. Ensure date format (in case variables are still string)
-* ==========================================================
-foreach var of varlist first_onset_chirps first_onset_gsmap first_onset_mswep first_onset_tamsat {
-    capture confirm numeric variable `var&#x27;
-    if _rc {
-        gen `var&#x27;_d = date(`var&#x27;, &quot;DMY&quot;)
-        format `var&#x27;_d %td
-        drop `var&#x27;
-        rename `var&#x27;_d `var&#x27;
-    }
-}
-
-* ==========================================================
-* 3. Differences in days vs. base (CHIRPS)
-* ==========================================================
-gen diff_gsmap  = first_onset_gsmap  - first_onset_chirps
-gen diff_mswep  = first_onset_mswep  - first_onset_chirps
-gen diff_tamsat = first_onset_tamsat - first_onset_chirps
-
-label var diff_gsmap  &quot;GSMAP - Base&quot;
-label var diff_mswep  &quot;MSWEP - Base&quot;
-label var diff_tamsat &quot;TAMSAT - Base&quot;
-
-tempfile wide
-save `wide&#x27;
-
-* ==========================================================
-* 1. Stack the 4 onset dates (using day-of-year to collapse into 1 season)
-* ==========================================================
-use `wide&#x27;, clear
-
-preserve
-    gen dataset = &quot;CHIRPS&quot;
-    gen date_raw = first_onset_chirps
-    keep year_original AEZ dataset date_raw
-    tempfile e1
-    save `e1&#x27;
-restore
-
-preserve
-    gen dataset = &quot;GSMAP&quot;
-    gen date_raw = first_onset_gsmap
-    keep year_original AEZ dataset date_raw
-    tempfile e2
-    save `e2&#x27;
-restore
-
-preserve
-    gen dataset = &quot;MSWEP&quot;
-    gen date_raw = first_onset_mswep
-    keep year_original AEZ dataset date_raw
-    tempfile e3
-    save `e3&#x27;
-restore
-
-preserve
-    gen dataset = &quot;TAMSAT&quot;
-    gen date_raw = first_onset_tamsat
-    keep year_original AEZ dataset date_raw
-    tempfile e4
-    save `e4&#x27;
-restore
-
-use `e1&#x27;, clear
-append using `e2&#x27;
-append using `e3&#x27;
-append using `e4&#x27;
-
-format date_raw %td
-
-* ---------- KEY STEP: convert to &quot;day of year&quot; to collapse the 14 years ----------
-* Assumes the onset falls within a single calendar year (e.g. May-Sept),
-* without crossing December-January. If it does cross, flag it to adjust the formula.
-drop if missing(date_raw)
-gen doy  = date_raw - mdy(1,1,year(date_raw)) + 1
-gen date = mdy(1,1,2000) + doy - 1
-format date %td
-
-tempfile stacked_dates
-save `stacked_dates&#x27;
-
-* ==========================================================
-* 2. Row position by dataset (4 rows)
-* ==========================================================
-gen row = .
-replace row = 4 if dataset == &quot;CHIRPS&quot;
-replace row = 3 if dataset == &quot;GSMAP&quot;
-replace row = 2 if dataset == &quot;MSWEP&quot;
-replace row = 1 if dataset == &quot;TAMSAT&quot;
-
-tempfile base_allyears
-save `base_allyears&#x27;
-
-* ==========================================================
-* 3. SINGLE PLOT FOR THE WHOLE PERIOD
-* ==========================================================
-
-use `base_allyears&#x27;, clear
-
-* ---------- 3a. Density by row ----------
-tempfile dens
-local firstd = 1
-forvalues r = 1/4 {
-    preserve
-        keep if row == `r&#x27;
-        quietly count
-        if r(N) &gt; 1 {
-            quietly kdensity date, n(300) generate(x_val densv) nograph
-            quietly summarize densv
-            gen y_base = `r&#x27;
-            gen y_top  = `r&#x27; + 0.8 * densv / r(max)
-            keep x_val y_base y_top
-            gen row = `r&#x27;
-            if `firstd&#x27; == 1 {
-                save `dens&#x27;, replace
-                local firstd = 0
-            }
-            else {
-                append using `dens&#x27;
-                save `dens&#x27;, replace
-            }
-        }
-    restore
-}
-
-* ---------- 3b. Horizontal baseline per row ----------
-use `base_allyears&#x27;, clear
-quietly summarize date
-local xmin = r(min) - 5
-local xmax = r(max) + 5
-
-clear
-set obs 8
-gen row    = ceil(_n/2)
-gen x_line = cond(mod(_n,2)==1, `xmin&#x27;, `xmax&#x27;)
-gen y_line = row
-tempfile baseline
-save `baseline&#x27;
-
-* ---------- 3c. Rug plot (individual dates within the season) ----------
-use `base_allyears&#x27;, clear
-gen y_lo = row - 0.05
-gen y_hi = row + 0.05
-tempfile rug
-save `rug&#x27;
-
-* ---------- 3d. Stack everything (WITHOUT boxst) ----------
-use `dens&#x27;, clear
-append using `baseline&#x27;
-append using `rug&#x27;
-
-* ---------- 3e. Plot ----------
-local col1 &quot;teal&quot;     // TAMSAT
-local col2 &quot;purple&quot;   // MSWEP
-local col3 &quot;orange&quot;   // GSMAP
-local col4 &quot;navy&quot;     // CHIRPS
-
-local arealayers &quot;&quot;
-local baselayers &quot;&quot;
-forvalues r = 1/4 {
-    local arealayers `arealayers&#x27; (rarea y_base y_top x_val if row==`r&#x27;, color(`col`r&#x27;&#x27;%45) lcolor(`col`r&#x27;&#x27;))
-    local baselayers `baselayers&#x27; (line y_line x_line if row==`r&#x27;, lcolor(`col`r&#x27;&#x27;) lwidth(thin))
-}
-
-twoway ///
-    `arealayers&#x27; ///
-    `baselayers&#x27; ///
-    (rspike y_lo y_hi date, lcolor(gs8) lwidth(vthin)) ///
-    , ///
-    ylabel(1 &quot;TAMSAT&quot; 2 &quot;MSWEP&quot; 3 &quot;GSMAP&quot; 4 &quot;CHIRPS&quot;, angle(0) noticks) ///
-    ytitle(&quot;&quot;) ///
-    xtitle(&quot;Onset timing within rainy season&quot;) ///
-    xlabel(, format(%tdMon_DD) angle(45) labsize(vsmall)) ///
-    title(&quot;Distribution of onset timing within rainy season - 2010-2023&quot;) ///
-    note(&quot;Dates collapsed to a generic year to reflect seasonality (2010-2023 stacked)&quot;) ///
-    legend(off) ///
-    yscale(range(0.5 4.8))
-
-graph export &quot;$Graph/raincloud_dist_season_2010-2023.png&quot;, replace width(2200)
-</code></pre>
-      </details>
-    </div>
-    <div class="code">
-      <h3>4. Robustness of Dry-Spell Effects to the Rainfall Dataset</h3>
+      <h3>3. Robustness of Dry-Spell Effects to the Rainfall Dataset</h3>
       <p>Re-estimates household and year fixed-effects models of internal migration on 14-, 20- and 30-day dry-spell shocks built from CHIRPS, GSMaP, MSWEP and TAMSAT, with clustered standard errors, two-way FE weight diagnostics and coefficient plots by sample.</p>
       <p><span class="tag">Stata</span><span class="tag">Fixed effects</span><span class="tag">Robustness</span><span class="tag">coefplot</span></p>
       <details class="code-details">
@@ -4597,7 +4359,7 @@ estimates clear
       </details>
     </div>
     <div class="code">
-      <h3>5. Senegal Rainfall Shock Maps</h3>
+      <h3>4. Senegal Rainfall Shock Maps</h3>
       <p>Maps the 30-day post-onset rainfall anomaly (TAMSAT) for survey villages by agro-ecological zone, 2021–2023. Control villages are shown as circles and treated villages as squares, on a colour scale fixed at ±80% so years are comparable.</p>
       <p><span class="tag">R</span><span class="tag">terra</span><span class="tag">Maps</span></p>
       <details class="code-details">
@@ -4766,7 +4528,7 @@ for (yr in years_to_map) {
       </details>
     </div>
     <div class="code">
-      <h3>6. Sankey Diagrams of Internal Migration Flows</h3>
+      <h3>5. Sankey Diagrams of Internal Migration Flows</h3>
       <p>Visualises internal migration episodes from origin region or agro-ecological zone, through rural/urban destination type, to destination region, with flows normalised within each origin. Uses the sankey_plot command by Fernando Rios-Avila.</p>
       <p><span class="tag">Stata</span><span class="tag">Sankey</span><span class="tag">Migration</span></p>
       <details class="code-details">
@@ -5118,6 +4880,1488 @@ sankey_plot x0 y0 x1 y1, ///
 
 graph export &quot;$Graph/GRAPH_4levels_norm_region.png&quot;, replace
 restore</code></pre>
+      </details>
+    </div>
+
+    <div class="group">
+      <h3 class="group-title">Macroeconomic Statistics – Argentina and Costa Rica</h3>
+      <p class="group-note">Two applied exercises with official statistics: tradable and non-tradable consumer prices in Argentina (INDEC), and inward FDI in Costa Rica reconciling the International Investment Position with the Balance of Payments (IMF, BPM6). Scripts download the public data and produce the figures end to end.</p>
+    </div>
+    <div class="code">
+      <h3>1. Argentina: Tradable vs. Non-Tradable Consumer Prices</h3>
+      <p>Downloads INDEC CPI files, splits goods (tradable) and services (non-tradable) following the Balassa–Samuelson logic, splices IPC-GBA and IPC Nacional at the December 2016 base, backcasts 2010–2016 with a log-linear trend, and plots year-on-year inflation and monthly incidence by component.</p>
+      <p><span class="tag">Python</span><span class="tag">pandas</span><span class="tag">matplotlib</span><span class="tag">CPI</span><span class="tag">INDEC</span></p>
+      <details class="code-details">
+        <summary>Show code</summary>
+        <div class="code-actions">
+          <a href="argentina_tradable_prices.py" download>Download .py</a>
+          <button type="button" class="copy-btn" data-target="code-m1">Copy code</button>
+        </div>
+        <pre class="code-box"><code id="code-m1" class="language-python"># =============================================================================
+# argentina_tradable_prices.py
+# Author: Camila Aguirre Diaz
+# Argentina: Tradable and Non-Tradable Consumer Prices (2010 – present)
+#
+# SOURCE: INDEC – Instituto Nacional de Estadistica y Censos (official)
+#         https://www.indec.gob.ar
+#
+# CLASSIFICATION:
+#   Tradable     = Bienes   (goods)
+#   Non-Tradable = Servicios (services)
+#   Justification: Balassa-Samuelson framework. Goods prices are arbitraged
+#   internationally via the exchange rate; service prices are set locally.
+#   INDEC itself publishes this Bienes/Servicios split officially.
+#
+# DATA SOURCES:
+#   sh_ipc_aperturas.xls  sheet &quot;Indices aperturas&quot;
+#     Dec 2016 – present: indices by division, Total Nacional, base Dec 2016=100
+#   sh_ipc_12_16.xls
+#     Apr–Nov 2016: direct Bienes/Servicios rows, base Dec 2016=100
+#
+# PRE-2016 BACKCAST (Jan 2010 – Mar 2016):
+#   Log-linear trend fitted on the observed Apr–Nov 2016 window.
+#   Model: ln(P_t) = a + b*t  =&gt;  constant monthly growth rate b.
+#   Backcast: P_{t-k} = P_apr2016 * exp(-b*k)
+#   The estimated monthly rates (~2–3%) are consistent with Argentina&#x27;s
+#   ~25–35% annual inflation in 2010–2016. Declared in report as backward
+#   extrapolation under constant-growth assumption.
+#
+# OUTPUTS:
+#   fig1_yoy_inflation.pdf / .png
+#   fig2_monthly_incidence.pdf / .png
+#   ipc_tradable_nontradable.csv
+# =============================================================================
+
+import io, warnings, unicodedata
+warnings.filterwarnings(&quot;ignore&quot;)
+
+import requests, xlrd
+import numpy as np
+import pandas as pd
+from numpy.linalg import lstsq
+import matplotlib
+matplotlib.use(&quot;Agg&quot;)
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+import matplotlib.dates as mdates
+
+plt.rcParams.update({
+    &quot;font.family&quot;      : &quot;DejaVu Sans&quot;,
+    &quot;axes.spines.top&quot;  : False,
+    &quot;axes.spines.right&quot;: False,
+    &quot;axes.grid&quot;        : True,
+    &quot;grid.alpha&quot;       : 0.3,
+    &quot;grid.linestyle&quot;   : &quot;--&quot;,
+    &quot;figure.dpi&quot;       : 150,
+})
+COLOR_T  = &quot;#E05C30&quot;
+COLOR_NT = &quot;#2B6CB0&quot;
+
+HEADERS = {
+    &quot;User-Agent&quot;: (
+        &quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64) &quot;
+        &quot;AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36&quot;
+    ),
+    &quot;Referer&quot;: &quot;https://www.indec.gob.ar/&quot;,
+}
+URL_AP   = &quot;https://www.indec.gob.ar/ftp/cuadros/economia/sh_ipc_aperturas.xls&quot;
+URL_HIST = &quot;https://www.indec.gob.ar/ftp/cuadros/economia/sh_ipc_12_16.xls&quot;
+
+# Weights base Dec 2016, Total Nacional (INDEC Ponderaciones sheet)
+POND_BIENES = {
+    &quot;alimentos y bebidas no alcoholicas&quot;     : 20.40,
+    &quot;bebidas alcoholicas y tabaco&quot;           :  3.09,
+    &quot;prendas de vestir y calzado&quot;            :  5.53,
+    &quot;equipamiento y mantenimiento del hogar&quot; :  5.49,
+}
+POND_SERVICIOS = {
+    &quot;vivienda, agua, electricidad, gas y otros combustibles&quot;: 14.01,
+    &quot;salud&quot;                  :  9.51,
+    &quot;transporte&quot;             : 11.34,
+    &quot;comunicacion&quot;           :  3.36,
+    &quot;recreacion y cultura&quot;   :  7.68,
+    &quot;educacion&quot;              :  6.46,
+    &quot;restaurantes y hoteles&quot; :  8.47,
+    &quot;bienes y servicios varios&quot;: 4.66,
+}
+W_B = sum(POND_BIENES.values())
+W_S = sum(POND_SERVICIOS.values())
+
+# =============================================================================
+# HELPERS
+# =============================================================================
+
+def download(url):
+    print(f&quot;  GET {url.split(&#x27;/&#x27;)[-1]} ...&quot;, flush=True)
+    r = requests.get(url, headers=HEADERS, timeout=120, verify=False)
+    r.raise_for_status()
+    if len(r.content) &lt; 5000:
+        raise ValueError(f&quot;File too small ({len(r.content)} bytes) — &quot;
+                         &quot;possible HTML redirect.&quot;)
+    return r.content
+
+def norm(s):
+    s = str(s).strip().lower()
+    s = unicodedata.normalize(&quot;NFD&quot;, s)
+    return &quot;&quot;.join(c for c in s if unicodedata.category(c) != &quot;Mn&quot;)
+
+# =============================================================================
+# 1.  LOAD sh_ipc_aperturas.xls  sheet &quot;Indices aperturas&quot;
+#     Dec 2016 – present, Total Nacional
+# =============================================================================
+
+def load_aperturas(raw):
+    wb = xlrd.open_workbook(file_contents=raw)
+    sh = wb.sheet_by_name(&quot;Índices aperturas&quot;)
+
+    # Date row = 5 (Excel serials)
+    dates = []
+    for c in range(1, sh.ncols):
+        v = sh.cell_value(5, c)
+        if isinstance(v, float) and v &gt; 40000:
+            dates.append(pd.Timestamp(xlrd.xldate_as_datetime(v, wb.datemode)))
+        else:
+            dates.append(None)
+    while dates and dates[-1] is None:
+        dates.pop()
+    dates = pd.DatetimeIndex(dates)
+    n = len(dates)
+    print(f&quot;  Dates: {dates[0].strftime(&#x27;%Y-%m&#x27;)} → &quot;
+          f&quot;{dates[-1].strftime(&#x27;%Y-%m&#x27;)} ({n} months)&quot;)
+
+    # Find Total Nacional block
+    total_row = None
+    for i in range(sh.nrows):
+        v = norm(str(sh.cell_value(i, 0)))
+        if &quot;total&quot; in v and &quot;nacional&quot; in v:
+            total_row = i
+            break
+    if total_row is None:
+        ng_rows = [i for i in range(sh.nrows)
+                   if &quot;nivel&quot; in norm(str(sh.cell_value(i, 0)))
+                   and &quot;general&quot; in norm(str(sh.cell_value(i, 0)))]
+        total_row = (ng_rows[-1] - 1) if ng_rows else 0
+    print(f&quot;  Total Nacional block at row {total_row}&quot;)
+
+    # Read all rows in block
+    block = {}
+    for i in range(total_row, min(total_row + 80, sh.nrows)):
+        label = sh.cell_value(i, 0)
+        if not isinstance(label, str) or not label.strip():
+            continue
+        vals = np.array([
+            float(sh.cell_value(i, c))
+            if isinstance(sh.cell_value(i, c), (int, float)) else np.nan
+            for c in range(1, n + 1)
+        ])
+        block[norm(label)] = vals
+
+    # Try direct Bienes/Servicios rows first
+    bi = next((block[k] for k in block if norm(k).strip() == &quot;bienes&quot;), None)
+    sv = next((block[k] for k in block if norm(k).strip() == &quot;servicios&quot;), None)
+    ng = next((block[k] for k in block
+               if &quot;nivel&quot; in k and &quot;general&quot; in k), None)
+
+    if bi is not None and sv is not None:
+        print(&quot;  Direct Bienes/Servicios rows found.&quot;)
+    else:
+        print(&quot;  Aggregating from divisions ...&quot;)
+        def wavg(pond):
+            arrs, ws = [], []
+            for key, w in pond.items():
+                match = next((k for k in block if key in k or k in key), None)
+                if match:
+                    arrs.append(block[match])
+                    ws.append(w)
+            if not arrs:
+                return np.full(n, np.nan)
+            W  = np.array(ws)
+            M  = np.vstack(arrs)
+            denom = np.nansum(W[:, None] * (~np.isnan(M)), axis=0)
+            denom[denom == 0] = np.nan
+            return np.nansum(M * W[:, None], axis=0) / denom
+        bi = wavg(POND_BIENES)
+        sv = wavg(POND_SERVICIOS)
+        if ng is None:
+            ng = wavg({**POND_BIENES, **POND_SERVICIOS})
+
+    return pd.DataFrame(
+        {&quot;bienes&quot;: bi, &quot;servicios&quot;: sv, &quot;nivel_general&quot;: ng},
+        index=dates)
+
+# =============================================================================
+# 2.  LOAD sh_ipc_12_16.xls  (Apr–Nov 2016, base Dec 2016 = 100)
+# =============================================================================
+
+def load_gba2016(raw):
+    wb = xlrd.open_workbook(file_contents=raw)
+    sh = wb.sheet_by_index(0)
+
+    dates = []
+    for c in range(1, sh.ncols):
+        v = sh.cell_value(3, c)
+        if isinstance(v, float) and v &gt; 40000:
+            dates.append(pd.Timestamp(xlrd.xldate_as_datetime(v, wb.datemode)))
+    dates = pd.DatetimeIndex(dates)
+    n = len(dates)
+
+    row_bi, row_sv, row_ng = None, None, None
+    for i in range(sh.nrows):
+        v = norm(str(sh.cell_value(i, 0)))
+        if v.strip() == &quot;bienes&quot;:              row_bi = i
+        elif v.strip() == &quot;servicios&quot;:         row_sv = i
+        elif &quot;nivel&quot; in v and &quot;general&quot; in v:  row_ng = i
+
+    def get(row):
+        return np.array([
+            float(sh.cell_value(row, c))
+            if isinstance(sh.cell_value(row, c), (int, float)) else np.nan
+            for c in range(1, n + 1)
+        ]) if row is not None else np.full(n, np.nan)
+
+    df = pd.DataFrame(
+        {&quot;bienes&quot;: get(row_bi), &quot;servicios&quot;: get(row_sv),
+         &quot;nivel_general&quot;: get(row_ng)}, index=dates)
+    print(f&quot;  GBA: {dates[0].strftime(&#x27;%Y-%m&#x27;)} → &quot;
+          f&quot;{dates[-1].strftime(&#x27;%Y-%m&#x27;)} ({n} months)&quot;)
+    print(f&quot;  Bienes:    {np.round(df[&#x27;bienes&#x27;].values, 2)}&quot;)
+    print(f&quot;  Servicios: {np.round(df[&#x27;servicios&#x27;].values, 2)}&quot;)
+    return df
+
+# =============================================================================
+# 3.  LOG-LINEAR TREND BACKCAST  Jan 2010 – Mar 2016
+#
+#  Fit log(P_t) = a + b*t on the Apr–Nov 2016 window (8 real obs).
+#  b = average monthly log-growth rate estimated from real data.
+#  Backcast: P_{t-k} = P_apr2016 * exp(-b * k)
+#  Annualised rates should be ~25-35%, consistent with 2010-2016 Argentina.
+# =============================================================================
+
+def trend_backcast(df_gba):
+    back_dates = pd.date_range(&quot;2010-01-01&quot;, &quot;2016-03-01&quot;, freq=&quot;MS&quot;)
+    n_back     = len(back_dates)   # 75 months
+    results    = {}
+
+    print(&quot;  Log-linear trend estimates (from Apr–Nov 2016 window):&quot;)
+    for col in [&quot;bienes&quot;, &quot;servicios&quot;, &quot;nivel_general&quot;]:
+        series = df_gba[col].dropna()
+        log_p  = np.log(series.values.astype(float))
+        t_obs  = np.arange(len(log_p))
+
+        # OLS: log(P) = a + b*t
+        A_mat        = np.column_stack([np.ones(len(t_obs)), t_obs])
+        coef, _, _, _ = lstsq(A_mat, log_p, rcond=None)
+        b            = coef[1]
+        monthly_pct  = (np.exp(b) - 1) * 100
+        annual_pct   = ((1 + monthly_pct / 100) ** 12 - 1) * 100
+        print(f&quot;    {col:25s}: {monthly_pct:.2f}%/month  &quot;
+              f&quot;({annual_pct:.1f}%/year)&quot;)
+
+        # Anchor = Apr 2016 (first observed value)
+        anchor_val = float(series.iloc[0])
+
+        # Backcast each month
+        idx = np.array([
+            anchor_val * np.exp(-b * (
+                (df_gba.index[0].year  - d.year)  * 12 +
+                (df_gba.index[0].month - d.month)
+            ))
+            for d in back_dates
+        ])
+        results[col] = idx
+
+    return pd.DataFrame(results, index=back_dates)
+
+# =============================================================================
+# MAIN
+# =============================================================================
+
+print(&quot;=&quot; * 60)
+print(&quot;Argentina CPI – Tradable vs Non-Tradable&quot;)
+print(&quot;Source: INDEC (official)&quot;)
+print(&quot;=&quot; * 60)
+
+print(&quot;\n[1/4] Downloading files ...&quot;)
+raw_ap   = download(URL_AP)
+raw_hist = download(URL_HIST)
+
+print(&quot;\n[2/4] Parsing data ...&quot;)
+df_nac = load_aperturas(raw_ap)
+df_gba = load_gba2016(raw_hist)
+
+print(&quot;\n[3/4] Log-linear trend backcast Jan 2010 – Mar 2016 ...&quot;)
+df_back = trend_backcast(df_gba)
+
+# Stitch: backcast + GBA Apr–Nov 2016 + NAC Dec 2016 – present
+df_full = pd.concat([df_back, df_gba, df_nac]).sort_index()
+df_full = df_full[~df_full.index.duplicated(keep=&quot;last&quot;)]
+
+# Rebase to January 2010 = 100
+BASE = pd.Timestamp(&quot;2010-01-01&quot;)
+for col, new in [(&quot;bienes&quot;,        &quot;bienes_idx&quot;),
+                 (&quot;servicios&quot;,     &quot;servicios_idx&quot;),
+                 (&quot;nivel_general&quot;, &quot;nivel_general_idx&quot;)]:
+    df_full[new] = df_full[col] / df_full.loc[BASE, col] * 100
+
+expected = pd.date_range(df_full.index[0], df_full.index[-1], freq=&quot;MS&quot;)
+missing  = expected.difference(df_full.index)
+print(f&quot;\n  Full series: {df_full.index[0].strftime(&#x27;%b %Y&#x27;)} → &quot;
+      f&quot;{df_full.index[-1].strftime(&#x27;%b %Y&#x27;)} &quot;
+      f&quot;({len(df_full)} months, {len(missing)} missing)&quot;)
+
+# Sanity check: Dec 2016 should be ~450–700 if base Jan2010=100
+dec16 = pd.Timestamp(&quot;2016-12-01&quot;)
+print(f&quot;  Dec 2016 index: bienes={df_full.loc[dec16,&#x27;bienes_idx&#x27;]:.1f}  &quot;
+      f&quot;servicios={df_full.loc[dec16,&#x27;servicios_idx&#x27;]:.1f}  &quot;
+      f&quot;(expected 450–700)&quot;)
+
+# =============================================================================
+# DERIVED SERIES
+# =============================================================================
+
+df_full[&quot;yoy_bienes&quot;]    = df_full[&quot;bienes_idx&quot;].pct_change(12) * 100
+df_full[&quot;yoy_servicios&quot;] = df_full[&quot;servicios_idx&quot;].pct_change(12) * 100
+df_full[&quot;yoy_ng&quot;]        = df_full[&quot;nivel_general_idx&quot;].pct_change(12) * 100
+
+df_full[&quot;mom_bienes&quot;]    = df_full[&quot;bienes_idx&quot;].pct_change(1) * 100
+df_full[&quot;mom_servicios&quot;] = df_full[&quot;servicios_idx&quot;].pct_change(1) * 100
+df_full[&quot;mom_ng&quot;]        = df_full[&quot;nivel_general_idx&quot;].pct_change(1) * 100
+
+W_BIENES    = W_B / (W_B + W_S) * 100
+W_SERVICIOS = W_S / (W_B + W_S) * 100
+df_full[&quot;inc_bienes&quot;]    = (W_BIENES    / 100) * df_full[&quot;mom_bienes&quot;]
+df_full[&quot;inc_servicios&quot;] = (W_SERVICIOS / 100) * df_full[&quot;mom_servicios&quot;]
+
+# =============================================================================
+# FIGURE 1 – Year-on-Year Inflation
+# =============================================================================
+
+print(&quot;\n[4/4] Generating figures ...&quot;)
+
+SPLICE       = pd.Timestamp(&quot;2016-12-01&quot;)
+BACKCAST_END = pd.Timestamp(&quot;2016-03-01&quot;)
+df_p = df_full.dropna(subset=[&quot;yoy_bienes&quot;, &quot;yoy_servicios&quot;]).copy()
+
+fig1, ax1 = plt.subplots(figsize=(13, 5.5))
+
+# Shade backcast region
+ax1.axvspan(df_p.index[0], BACKCAST_END, color=&quot;gray&quot;, alpha=0.08,
+            label=&quot;_nolegend_&quot;)
+ax1.text(pd.Timestamp(&quot;2012-06-01&quot;), 5,
+         &quot;← trend extrapolation&quot;, fontsize=7.5, color=&quot;gray&quot;, va=&quot;bottom&quot;)
+
+# Series
+ax1.plot(df_p.index, df_p[&quot;yoy_bienes&quot;],
+         color=COLOR_T,  lw=1.7, label=&quot;Bienes (tradable)&quot;)
+ax1.plot(df_p.index, df_p[&quot;yoy_servicios&quot;],
+         color=COLOR_NT, lw=1.7, ls=&quot;--&quot;, label=&quot;Servicios (non-tradable)&quot;)
+
+ax1.axvline(SPLICE, color=&quot;gray&quot;, lw=0.9, ls=&quot;:&quot;, alpha=0.7)
+ax1.axhline(0, color=&quot;black&quot;, lw=0.4)
+
+ymax = df_p[[&quot;yoy_bienes&quot;,&quot;yoy_servicios&quot;]].max().max()
+ax1.text(SPLICE + pd.DateOffset(months=1), ymax * 0.93,
+         &quot;Splice\nDec 2016&quot;, fontsize=7.5, color=&quot;gray&quot;, va=&quot;top&quot;)
+
+ax1.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x,_: f&quot;{x:.0f}%&quot;))
+ax1.set_title(
+    &quot;Argentina – Year-on-Year CPI Inflation\n&quot;
+    &quot;Bienes (Tradable) vs. Servicios (Non-Tradable)&quot;,
+    fontsize=12, fontweight=&quot;bold&quot;, pad=10)
+ax1.set_xlabel(&quot;Date&quot;)
+ax1.set_ylabel(&quot;YoY change (%)&quot;)
+ax1.legend(loc=&quot;upper left&quot;, fontsize=9)
+ax1.set_xlim(df_p.index[0], df_p.index[-1])
+ax1.annotate(
+    &quot;Sources: INDEC sh_ipc_aperturas.xls (IPC Nacional, base Dec 2016=100) and &quot;
+    &quot;sh_ipc_12_16.xls (IPC-GBA, Apr–Nov 2016). Base Jan 2010 = 100.\n&quot;
+    &quot;Shaded area: Jan 2010–Mar 2016 backcasted via log-linear trend fitted &quot;
+    &quot;on Apr–Nov 2016 GBA window.&quot;,
+    xy=(0.01, 0.01), xycoords=&quot;axes fraction&quot;,
+    fontsize=7, color=&quot;gray&quot;, va=&quot;bottom&quot;)
+
+fig1.tight_layout()
+fig1.savefig(&quot;fig1_yoy_inflation.pdf&quot;, bbox_inches=&quot;tight&quot;)
+fig1.savefig(&quot;fig1_yoy_inflation.png&quot;, bbox_inches=&quot;tight&quot;, dpi=150)
+print(&quot;  Saved fig1_yoy_inflation.pdf / .png&quot;)
+
+# =============================================================================
+# FIGURE 2 – Monthly Incidence (last 5 years)
+# =============================================================================
+
+df_inc = df_full.dropna(subset=[&quot;inc_bienes&quot;,&quot;inc_servicios&quot;]).iloc[-60:]
+
+fig2, ax2 = plt.subplots(figsize=(15, 5.5))
+dn = mdates.date2num(df_inc.index.to_pydatetime())
+BW = 18
+
+b_pos = np.maximum(df_inc[&quot;inc_bienes&quot;].values,    0)
+b_neg = np.minimum(df_inc[&quot;inc_bienes&quot;].values,    0)
+s_pos = np.maximum(df_inc[&quot;inc_servicios&quot;].values, 0)
+s_neg = np.minimum(df_inc[&quot;inc_servicios&quot;].values, 0)
+
+ax2.bar(dn, b_pos, BW, color=COLOR_T,  label=&quot;Bienes (tradable)&quot;)
+ax2.bar(dn, s_pos, BW, color=COLOR_NT, label=&quot;Servicios (non-tradable)&quot;,
+        bottom=b_pos)
+ax2.bar(dn, b_neg, BW, color=COLOR_T,  alpha=0.7)
+ax2.bar(dn, s_neg, BW, color=COLOR_NT, bottom=b_neg, alpha=0.7)
+ax2.plot(dn, df_inc[&quot;mom_ng&quot;].values,
+         color=&quot;black&quot;, lw=1.2, marker=&quot;.&quot;, ms=3,
+         label=&quot;Nivel general (total)&quot;, zorder=5)
+
+ax2.xaxis_date()
+ax2.xaxis.set_major_formatter(mdates.DateFormatter(&quot;%b\n%Y&quot;))
+ax2.xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 7]))
+ax2.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x,_: f&quot;{x:.1f}%&quot;))
+ax2.axhline(0, color=&quot;black&quot;, lw=0.6)
+ax2.set_title(
+    &quot;Argentina – Monthly CPI Incidence by Component\n&quot;
+    &quot;Bienes (Tradable) vs. Servicios (Non-Tradable)&quot;,
+    fontsize=12, fontweight=&quot;bold&quot;, pad=10)
+ax2.set_xlabel(&quot;Date&quot;)
+ax2.set_ylabel(&quot;Monthly contribution (pp)&quot;)
+ax2.legend(loc=&quot;upper left&quot;, fontsize=9)
+ax2.set_xlim(dn[0] - 30, dn[-1] + 30)
+s0 = df_inc.index[0].strftime(&quot;%b %Y&quot;)
+s1 = df_inc.index[-1].strftime(&quot;%b %Y&quot;)
+ax2.annotate(
+    f&quot;Period: {s0}–{s1}.  &quot;
+    f&quot;Weights: Bienes {W_BIENES:.1f}%, Servicios {W_SERVICIOS:.1f}% &quot;
+    &quot;(INDEC, base Dec 2016).\nSource: INDEC sh_ipc_aperturas.xls.&quot;,
+    xy=(0.01, 0.01), xycoords=&quot;axes fraction&quot;,
+    fontsize=7, color=&quot;gray&quot;, va=&quot;bottom&quot;)
+
+fig2.tight_layout()
+fig2.savefig(&quot;fig2_monthly_incidence.pdf&quot;, bbox_inches=&quot;tight&quot;)
+fig2.savefig(&quot;fig2_monthly_incidence.png&quot;, bbox_inches=&quot;tight&quot;, dpi=150)
+print(&quot;  Saved fig2_monthly_incidence.pdf / .png&quot;)
+
+# =============================================================================
+# EXPORT CSV
+# =============================================================================
+out = [&quot;bienes_idx&quot;,&quot;servicios_idx&quot;,&quot;nivel_general_idx&quot;,
+       &quot;yoy_bienes&quot;,&quot;yoy_servicios&quot;,&quot;yoy_ng&quot;,
+       &quot;mom_bienes&quot;,&quot;mom_servicios&quot;,&quot;mom_ng&quot;,
+       &quot;inc_bienes&quot;,&quot;inc_servicios&quot;]
+df_full[out].to_csv(&quot;ipc_tradable_nontradable.csv&quot;, float_format=&quot;%.4f&quot;)
+print(&quot;  Saved ipc_tradable_nontradable.csv&quot;)
+print(&quot;\nDone.&quot;)
+</code></pre>
+      </details>
+    </div>
+    <div class="code">
+      <h3>2. Costa Rica: FDI Position vs. Balance of Payments Flows</h3>
+      <p>Fetches quarterly inward FDI flows and stocks from the IMF SDMX API (with a BCCR fallback), aggregates flows by summing quarters and stocks by year-end values, checks sign conventions, and builds 2015 = 100 indices and the BPM6 residual (other changes in position) between ΔIIP and BOP flows.</p>
+      <p><span class="tag">Python</span><span class="tag">IMF API</span><span class="tag">BPM6</span><span class="tag">FDI</span></p>
+      <details class="code-details">
+        <summary>Show code</summary>
+        <div class="code-actions">
+          <a href="costarica_fdi_iip_bop.py" download>Download .py</a>
+          <button type="button" class="copy-btn" data-target="code-m2">Copy code</button>
+        </div>
+        <pre class="code-box"><code id="code-m2" class="language-python">&quot;&quot;&quot;
+=============================================================================
+costarica_fdi_iip_bop.py
+Part 2 – Costa Rica: Foreign Direct Investment, IIP vs Balance of Payments
+Author: Camila Aguirre Diaz
+=============================================================================
+
+TASK 1 – DATA COLLECTION
+=========================
+Primary source: IMF Balance of Payments Statistics (BOP/IIP dataset)
+  API: http://dataservices.imf.org/REST/SDMX_JSON.svc  (public, no auth)
+  Country code: 238 (Costa Rica, IMF BOP dataset numeric code)
+  Framework: BPM6 (Sixth Edition of the BOP/IIP Manual)
+  Units: millions of US dollars
+
+The script fetches QUARTERLY data from the IMF SDMX-JSON API and
+aggregates to annual frequency using the appropriate method for each
+series type (see aggregation section below). If the API is unreachable
+the script falls back to hardcoded values transcribed from the BCCR
+(Banco Central de Costa Rica) official tables on 2025-05-25.
+
+Indicators requested:
+  (A) IIP inward FDI stock  → ILFD_BP6_USD
+      &quot;IIP, Liabilities, Direct Investment&quot;
+      End-of-period stock; positive = outstanding inward FDI position
+
+  (B) BOP inward FDI flows  → BFDI_BP6_USD
+      &quot;Financial Account, Direct Investment, Net Incurrence of Liabilities&quot;
+      Flow per period; positive = net capital inflow into Costa Rica
+
+SIGN CONVENTION AND COMPARABILITY
+===================================
+Both indicators measure inward FDI from the same perspective (liability
+side of the reporting economy = Costa Rica):
+  ILFD_BP6_USD  positive → larger inward stock
+  BFDI_BP6_USD  positive → net inflow during the period
+
+No sign adjustment is required. The two series are directly comparable
+under the same BPM6 sign convention. This is verified explicitly in
+Section 2 of this script.
+
+AGGREGATION FROM QUARTERLY TO ANNUAL
+======================================
+The IMF BOP dataset publishes data at quarterly frequency (Q).
+Aggregation to annual frequency follows BPM6 methodology:
+
+  BOP flows  (BFDI_BP6_USD):
+    Annual = SUM of Q1 + Q2 + Q3 + Q4
+    Justification: flows are additive across time periods. A transaction
+    recorded in Q2 is as valid a flow as one recorded in Q4. Summing
+    gives total transactions during the calendar year (BPM6 §3.7,
+    &quot;flows refer to economic actions and effects of events that take
+    place within an accounting period&quot;).
+
+  IIP stock  (ILFD_BP6_USD):
+    Annual = Q4 value (end-of-year, i.e. 31 December)
+    Justification: stocks represent a balance at a point in time, not
+    cumulative transactions. The year-end value (Q4) is the standard
+    annual IIP benchmark published by all central banks and the IMF
+    (BPM6 §7.4: &quot;the IIP is a statement... at a specific point in time&quot;).
+    Summing or averaging quarterly stocks would be conceptually wrong.
+
+TASK 2 – INDICATOR CONSTRUCTION
+=================================
+The BPM6 reconciliation identity (Chapter 9) states:
+
+    IIP_t = IIP_{t-1} + Flow_t + OtherChanges_t            ...(1)
+
+where OtherChanges_t (OVAP) captures valuation effects (price and
+exchange-rate changes), reclassifications, and statistical revisions
+not recorded as transactions.
+
+Rearranging (1):
+    OtherChanges_t = ΔIIP_t − Flow_t                       ...(2)
+
+To compare cumulated flows with the IIP change over the FULL PERIOD
+(cumulated over the period) we construct:
+
+    CumFlow_t = Σ Flow_s  for s = 2016 to t                ...(3)
+
+    Residual_t = (IIP_t − IIP_2015) − CumFlow_t            ...(4)
+               = ΔIIP since 2015  −  cumulated flows since 2015
+
+This is the quantity that reconciles cumulated BOP flows with the
+change in the IIP position.
+
+INDEX CONSTRUCTION
+===================
+To make IIP (stock) and BOP (flow) variations directly comparable
+on a single chart, both are expressed as index numbers, 2015 = 100:
+
+  IIP_index_t   = IIP_t / IIP_2015 × 100
+  BOP_index_t   = (IIP_2015 + CumFlow_t) / IIP_2015 × 100
+
+The BOP index is the &quot;flow-implied position&quot;: what the IIP stock would
+be if only BOP-recorded transactions had driven it, anchored to the
+actual 2015 level. Both indices therefore answer the same question:
+&quot;how large is the FDI position in year t relative to 2015?&quot; — making
+their divergence directly interpretable as accumulated OVAP.
+
+TASK 3 – OUTPUT
+================
+  figure1_fdi_index.pdf    Chart 1: IIP index vs BOP cumulated-flows index
+  figure2_fdi_residual.pdf Chart 2: Annual residual (ΔIIP_t − Flow_t)
+=============================================================================
+&quot;&quot;&quot;
+
+import sys
+import time
+import warnings
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use(&quot;Agg&quot;)
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+from matplotlib.patches import Patch
+
+try:
+    import requests
+except ImportError:
+    print(&quot;Installing requests...&quot;)
+    import subprocess
+    subprocess.check_call([sys.executable, &quot;-m&quot;, &quot;pip&quot;, &quot;install&quot;,
+                           &quot;requests&quot;, &quot;--break-system-packages&quot;, &quot;-q&quot;])
+    import requests
+
+# =============================================================================
+# SECTION 0 – CONFIGURATION
+# =============================================================================
+
+IMF_BASE    = &quot;http://dataservices.imf.org/REST/SDMX_JSON.svc&quot;
+COUNTRY     = &quot;238&quot;          # IMF numeric code for Costa Rica in BOP dataset
+FREQ        = &quot;Q&quot;            # Quarterly – we aggregate to annual ourselves
+BOP_IND     = &quot;BFDI_BP6_USD&quot; # BOP: Direct investment, net incurrence of liabilities
+IIP_IND     = &quot;ILFD_BP6_USD&quot; # IIP: Liabilities, Direct investment (end-of-period)
+START_YEAR  = 2015
+MAX_RETRIES = 3
+RETRY_WAIT  = 5              # seconds between retries
+
+FIG1 = &quot;figure1_fdi_index.pdf&quot;
+FIG2 = &quot;figure2_fdi_residual.pdf&quot;
+
+# =============================================================================
+# SECTION 1 – FALLBACK DATA  (BCCR, gee.bccr.fi.cr, accessed 2025-05-25)
+# =============================================================================
+# These values are used ONLY if the IMF API is unreachable.
+# Source: Banco Central de Costa Rica (BCCR), the national compiler of BOP/IIP
+# statistics for Costa Rica. BCCR reports under BPM6 and submits these figures
+# to the IMF; the IMF redistributes them in the BOP/IIP dataset above.
+# IIP series: &quot;Inversión Directa en la economía declarante&quot; (pasivos), annual
+# BOP series: &quot;Inversión directa en Costa Rica&quot; (pasivos netos), annual
+# Units: millions of US dollars | 2023–2024: preliminary figures
+
+FALLBACK_BOP = {   # Annual net inward FDI flows (mn USD)
+    2015: 2857.2, 2016: 2742.0, 2017: 3499.0, 2018: 3051.0, 2019: 2811.0,
+    2020: 1698.0, 2021: 3233.0, 2022: 4111.0, 2023: 3853.0, 2024: 3848.0,
+}
+FALLBACK_IIP = {   # Annual end-of-year inward FDI stock (mn USD)
+    2015: 34277.6, 2016: 37308.6, 2017: 40788.2, 2018: 44524.5, 2019: 47753.2,
+    2020: 50128.6, 2021: 53154.9, 2022: 60356.6, 2023: 65656.1, 2024: 71059.5,
+}
+
+# =============================================================================
+# SECTION 2 – IMF API: FETCH QUARTERLY DATA
+# =============================================================================
+
+def fetch_imf_quarterly(indicator: str, country: str,
+                        start: int) -&gt; pd.Series | None:
+    &quot;&quot;&quot;
+    Fetch quarterly time series from IMF SDMX-JSON API.
+    Returns a pandas Series indexed by &#x27;YYYY-QN&#x27; strings, or None on failure.
+    &quot;&quot;&quot;
+    url = (f&quot;{IMF_BASE}/CompactData/BOP/&quot;
+           f&quot;{FREQ}.{country}.{indicator}.&quot;
+           f&quot;?startPeriod={start}-Q1&quot;)
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.get(url, timeout=60)
+            resp.raise_for_status()
+            raw  = resp.json()
+            obs  = (raw[&quot;CompactData&quot;][&quot;DataSet&quot;][&quot;Series&quot;][&quot;Obs&quot;])
+            if isinstance(obs, dict):
+                obs = [obs]
+            records = {
+                o[&quot;@TIME_PERIOD&quot;]: float(o[&quot;@OBS_VALUE&quot;])
+                for o in obs
+                if o.get(&quot;@OBS_VALUE&quot;) not in (&quot;&quot;, None)
+            }
+            if records:
+                return pd.Series(records, name=indicator)
+        except requests.exceptions.ConnectionError:
+            print(f&quot;    Attempt {attempt}/{MAX_RETRIES}: connection error.&quot;)
+        except requests.exceptions.HTTPError as e:
+            print(f&quot;    Attempt {attempt}/{MAX_RETRIES}: HTTP {e}.&quot;)
+        except Exception as e:
+            print(f&quot;    Attempt {attempt}/{MAX_RETRIES}: {e}.&quot;)
+        if attempt &lt; MAX_RETRIES:
+            time.sleep(RETRY_WAIT)
+    return None
+
+
+def quarterly_to_annual_flows(q_series: pd.Series,
+                               start: int) -&gt; pd.Series:
+    &quot;&quot;&quot;
+    Aggregate quarterly BOP FLOWS to annual by SUMMING Q1+Q2+Q3+Q4.
+    Justification: flows are additive across time sub-periods (BPM6 §3.7).
+    Only complete years (all 4 quarters present) are retained.
+    &quot;&quot;&quot;
+    records = {}
+    for yr in range(start, 2030):
+        quarters = [f&quot;{yr}-Q{q}&quot; for q in range(1, 5)]
+        if all(q in q_series.index for q in quarters):
+            records[yr] = sum(q_series[q] for q in quarters)
+        else:
+            break   # stop at first incomplete year
+    return pd.Series(records, name=&quot;bop_flow_musd&quot;)
+
+
+def quarterly_to_annual_stock(q_series: pd.Series,
+                               start: int) -&gt; pd.Series:
+    &quot;&quot;&quot;
+    Aggregate quarterly IIP STOCK to annual by taking the Q4 (end-of-year) value.
+    Justification: stocks represent a position at a point in time; the year-end
+    value (31 December = Q4) is the standard annual benchmark (BPM6 §7.4).
+    Averaging or summing quarterly stocks would be conceptually incorrect.
+    &quot;&quot;&quot;
+    records = {}
+    for yr in range(start, 2030):
+        q4 = f&quot;{yr}-Q4&quot;
+        if q4 in q_series.index:
+            records[yr] = q_series[q4]
+        else:
+            break
+    return pd.Series(records, name=&quot;iip_stock_musd&quot;)
+
+
+# =============================================================================
+# SECTION 3 – SIGN CONVENTION VERIFICATION
+# =============================================================================
+
+def verify_sign_convention(bop: pd.Series, iip: pd.Series) -&gt; None:
+    &quot;&quot;&quot;
+    Verify that BOP flows and IIP stock use compatible sign conventions.
+
+    Under BPM6:
+      BFDI_BP6_USD  = net incurrence of liabilities, direct investment
+                      positive → Costa Rica received net inward FDI
+      ILFD_BP6_USD  = IIP liabilities, direct investment
+                      positive → outstanding inward FDI stock
+
+    Both are measured from the LIABILITY side of Costa Rica&#x27;s balance sheet.
+    A sustained positive flow (BFDI) should be associated with a growing
+    stock (ILFD). We verify this empirically:
+      - majority of BOP flow observations should be positive (net inflows)
+      - IIP stock should be consistently positive and generally increasing
+      - correlation between cumulated flows and IIP stock should be high (&gt;0.9)
+    &quot;&quot;&quot;
+    common = bop.index.intersection(iip.index)
+    bop_c  = bop.loc[common]
+    iip_c  = iip.loc[common]
+
+    pct_positive_bop = (bop_c &gt; 0).mean()
+    iip_increasing   = (iip_c.diff().dropna() &gt; 0).mean()
+    cum_flows        = bop_c.cumsum()
+    correlation      = cum_flows.corr(iip_c)
+
+    print(&quot;\n--- Sign Convention Verification ---&quot;)
+    print(f&quot;  BOP flows positive:         {pct_positive_bop:.0%} of years&quot;)
+    print(f&quot;  IIP stock increasing:       {iip_increasing:.0%} of years&quot;)
+    print(f&quot;  Corr(cumulated flows, IIP): {correlation:.4f}&quot;)
+
+    if pct_positive_bop &lt; 0.5:
+        warnings.warn(
+            &quot;Majority of BOP flows are negative — sign inversion may be needed.&quot;
+        )
+        print(&quot;  *** WARNING: BOP sign may need inversion ***&quot;)
+    elif correlation &lt; 0.8:
+        warnings.warn(
+            &quot;Low correlation between cumulated flows and IIP stock — &quot;
+            &quot;check sign conventions.&quot;
+        )
+        print(&quot;  *** WARNING: Low correlation — check sign conventions ***&quot;)
+    else:
+        print(&quot;  ✓ Sign conventions are compatible. No adjustment required.&quot;)
+        print(&quot;  ✓ Both series measure inward FDI from the liability side (BPM6).&quot;)
+
+
+# =============================================================================
+# SECTION 4 – MAIN DATA COLLECTION LOGIC
+# =============================================================================
+
+print(&quot;=&quot; * 68)
+print(&quot;Part 2 – Costa Rica: FDI, IIP vs Balance of Payments&quot;)
+print(&quot;=&quot; * 68)
+print(f&quot;\nPrimary source : IMF BOP/IIP SDMX-JSON API&quot;)
+print(f&quot;Fallback source: BCCR (gee.bccr.fi.cr), accessed 2025-05-25&quot;)
+print(f&quot;Country code   : {COUNTRY} (Costa Rica, IMF BOP dataset)&quot;)
+print(f&quot;Indicators     : {BOP_IND} (BOP flows), {IIP_IND} (IIP stock)&quot;)
+print(f&quot;Frequency      : Quarterly fetch → aggregated to Annual\n&quot;)
+
+# --- Attempt IMF API ---
+print(&quot;[1/4] Fetching quarterly BOP flows from IMF API...&quot;)
+q_bop_raw = fetch_imf_quarterly(BOP_IND, COUNTRY, START_YEAR)
+
+print(&quot;[2/4] Fetching quarterly IIP stock from IMF API...&quot;)
+q_iip_raw = fetch_imf_quarterly(IIP_IND, COUNTRY, START_YEAR)
+
+# --- Aggregate or fall back ---
+use_fallback_bop = False
+use_fallback_iip = False
+
+if q_bop_raw is not None and not q_bop_raw.empty:
+    print(f&quot;      API OK: {len(q_bop_raw)} quarterly BOP observations&quot;)
+    bop_annual = quarterly_to_annual_flows(q_bop_raw, START_YEAR)
+    print(f&quot;      Aggregated to annual (SUM Q1–Q4): {len(bop_annual)} years&quot;)
+else:
+    print(&quot;      API unreachable — using BCCR fallback data&quot;)
+    bop_annual = pd.Series(FALLBACK_BOP, name=&quot;bop_flow_musd&quot;)
+    use_fallback_bop = True
+
+if q_iip_raw is not None and not q_iip_raw.empty:
+    print(f&quot;      API OK: {len(q_iip_raw)} quarterly IIP observations&quot;)
+    iip_annual = quarterly_to_annual_stock(q_iip_raw, START_YEAR)
+    print(f&quot;      Aggregated to annual (Q4 end-of-year): {len(iip_annual)} years&quot;)
+else:
+    print(&quot;      API unreachable — using BCCR fallback data&quot;)
+    iip_annual = pd.Series(FALLBACK_IIP, name=&quot;iip_stock_musd&quot;)
+    use_fallback_iip = True
+
+# --- Build unified DataFrame ---
+df = pd.DataFrame({
+    &quot;flow&quot;: bop_annual,
+    &quot;iip&quot; : iip_annual,
+}).dropna()
+
+# Determine actual end year from data
+END_YEAR = int(df.index.max())
+df = df.loc[START_YEAR:END_YEAR]
+
+print(f&quot;\n      Period covered: {START_YEAR}–{END_YEAR} &quot;
+      f&quot;({&#x27;API&#x27; if not use_fallback_bop else &#x27;BCCR fallback&#x27;} for BOP, &quot;
+      f&quot;{&#x27;API&#x27; if not use_fallback_iip else &#x27;BCCR fallback&#x27;} for IIP)&quot;)
+
+print(&quot;\nRaw annual data (million USD):&quot;)
+print(df.rename(columns={&quot;flow&quot;:&quot;BOP Flow (mn USD)&quot;,
+                          &quot;iip&quot; :&quot;IIP Stock (mn USD)&quot;
+                         }).to_string(float_format=&quot;{:,.1f}&quot;.format))
+
+# =============================================================================
+# SECTION 5 – SIGN CONVENTION VERIFICATION
+# =============================================================================
+
+print(&quot;\n[3/4] Verifying sign conventions...&quot;)
+verify_sign_convention(df[&quot;flow&quot;], df[&quot;iip&quot;])
+
+# =============================================================================
+# SECTION 6 – INDICATOR CONSTRUCTION
+# =============================================================================
+
+print(&quot;\n[4/4] Constructing indicators and residual...\n&quot;)
+
+# --- 6a. Annual change in IIP ---
+df[&quot;delta_iip&quot;] = df[&quot;iip&quot;].diff()
+
+# --- 6b. Annual residual: OtherChanges = ΔIIP_t − Flow_t ---
+# Per BPM6 Ch.9: IIP_t = IIP_{t-1} + Flow_t + OtherChanges_t
+# =&gt; OtherChanges_t = ΔIIP_t − Flow_t
+# Positive: IIP grew more than flows (valuation gains, upward revisions)
+# Negative: IIP grew less than flows (valuation losses, write-offs)
+df[&quot;residual_annual&quot;] = df[&quot;delta_iip&quot;] - df[&quot;flow&quot;]
+
+# --- 6c. Cumulated flows since 2015, anchored to IIP_2015 ---
+# This gives the &quot;flow-implied position&quot;: the IIP level that would
+# prevail if ONLY BOP-recorded transactions drove the position.
+base_iip = float(df.loc[START_YEAR, &quot;iip&quot;])
+
+df[&quot;iip_from_flows&quot;] = np.nan
+df.loc[START_YEAR, &quot;iip_from_flows&quot;] = base_iip
+for yr in range(START_YEAR + 1, END_YEAR + 1):
+    if yr in df.index:
+        df.loc[yr, &quot;iip_from_flows&quot;] = (
+            df.loc[yr - 1, &quot;iip_from_flows&quot;] + df.loc[yr, &quot;flow&quot;]
+        )
+
+# --- 6d. Period residual (cumulated): (IIP_t − IIP_2015) − CumFlows_t ---
+# Reconciles BOP flows cumulated over the period with the CHANGE
+# in the FDI position recorded in the IIP
+df[&quot;residual_cumulated&quot;] = (df[&quot;iip&quot;] - base_iip) - (
+    df[&quot;iip_from_flows&quot;] - base_iip
+)
+
+# --- 6e. Index both series to 2015 = 100 ---
+df[&quot;iip_index&quot;]   = df[&quot;iip&quot;]            / base_iip * 100
+df[&quot;flows_index&quot;] = df[&quot;iip_from_flows&quot;] / base_iip * 100
+
+# --- Print full results table ---
+print(&quot;Full results table (million USD unless noted):\n&quot;)
+print(f&quot;{&#x27;Year&#x27;:&lt;6} {&#x27;BOP Flow&#x27;:&gt;10} {&#x27;IIP Stock&#x27;:&gt;11} {&#x27;IIP(flows)&#x27;:&gt;11} &quot;
+      f&quot;{&#x27;ΔIIP&#x27;:&gt;10} {&#x27;Res.(ann.)&#x27;:&gt;11} {&#x27;IIP idx&#x27;:&gt;9} {&#x27;BOP idx&#x27;:&gt;9}&quot;)
+print(&quot;-&quot; * 80)
+for yr in df.index:
+    r   = df.loc[yr]
+    d   = f&quot;{r[&#x27;delta_iip&#x27;]:&gt;10,.1f}&quot;       if pd.notna(r[&#x27;delta_iip&#x27;])       else f&quot;{&#x27;N/A&#x27;:&gt;10}&quot;
+    ra  = f&quot;{r[&#x27;residual_annual&#x27;]:&gt;11,.1f}&quot;  if pd.notna(r[&#x27;residual_annual&#x27;])  else f&quot;{&#x27;N/A&#x27;:&gt;11}&quot;
+    print(f&quot;{yr:&lt;6} {r[&#x27;flow&#x27;]:&gt;10,.1f} {r[&#x27;iip&#x27;]:&gt;11,.1f} &quot;
+          f&quot;{r[&#x27;iip_from_flows&#x27;]:&gt;11,.1f} {d} {ra} &quot;
+          f&quot;{r[&#x27;iip_index&#x27;]:&gt;9.2f} {r[&#x27;flows_index&#x27;]:&gt;9.2f}&quot;)
+
+print(&quot;-&quot; * 80)
+post = df.loc[START_YEAR + 1:]
+tot_flow = post[&quot;flow&quot;].sum()
+tot_diip = post[&quot;delta_iip&quot;].sum()
+tot_res  = post[&quot;residual_annual&quot;].dropna().sum()
+print(f&quot;\nCumulated BOP flows  {START_YEAR+1}–{END_YEAR}: ${tot_flow:&gt;10,.1f} mn&quot;)
+print(f&quot;Total ΔIIP           {START_YEAR+1}–{END_YEAR}: ${tot_diip:&gt;10,.1f} mn&quot;)
+print(f&quot;Total residual(OVAP) {START_YEAR+1}–{END_YEAR}: ${tot_res:&gt;10,.1f} mn  &quot;
+      f&quot;({tot_res/tot_diip*100:.1f}% of ΔIIP)&quot;)
+print(f&quot;IIP 2015: ${base_iip:,.1f} mn  →  IIP {END_YEAR}: &quot;
+      f&quot;${df.loc[END_YEAR,&#x27;iip&#x27;]:,.1f} mn  &quot;
+      f&quot;(+{(df.loc[END_YEAR,&#x27;iip&#x27;]/base_iip-1)*100:.1f}%)&quot;)
+
+# =============================================================================
+# SECTION 7 – FIGURE 1: IIP INDEX vs BOP CUMULATED-FLOWS INDEX (2015=100)
+# =============================================================================
+
+plt.rcParams.update({
+    &quot;font.family&quot;      : &quot;serif&quot;,
+    &quot;font.size&quot;        : 10,
+    &quot;axes.titlesize&quot;   : 11,
+    &quot;axes.titleweight&quot; : &quot;bold&quot;,
+    &quot;axes.labelsize&quot;   : 9,
+    &quot;axes.spines.top&quot;  : False,
+    &quot;axes.spines.right&quot;: False,
+    &quot;legend.frameon&quot;   : False,
+    &quot;legend.fontsize&quot;  : 9,
+    &quot;lines.linewidth&quot;  : 2.0,
+    &quot;grid.alpha&quot;       : 0.35,
+    &quot;grid.linewidth&quot;   : 0.6,
+})
+
+years = df.index.tolist()
+src_note = (&quot;Source: IMF BOP/IIP dataset (SDMX-JSON API)&quot;
+            if not (use_fallback_bop and use_fallback_iip)
+            else &quot;Source: BCCR – Banco Central de Costa Rica (fallback)&quot;)
+
+fig1, ax1 = plt.subplots(figsize=(8, 4.8))
+
+ax1.plot(years, df[&quot;iip_index&quot;],
+         color=&quot;#1a5276&quot;, marker=&quot;o&quot;, markersize=5, linewidth=2,
+         label=f&quot;IIP – Inward FDI position\n({IIP_IND})&quot;)
+
+ax1.plot(years, df[&quot;flows_index&quot;],
+         color=&quot;#c0392b&quot;, marker=&quot;s&quot;, markersize=5,
+         linewidth=2, linestyle=&quot;--&quot;,
+         label=f&quot;BOP – Cumulated inward FDI flows\n({BOP_IND}, anchored to IIP 2015)&quot;)
+
+ax1.axhline(100, color=&quot;#888&quot;, linewidth=0.8, linestyle=&quot;:&quot;)
+
+ax1.fill_between(years,
+                 df[&quot;iip_index&quot;], df[&quot;flows_index&quot;],
+                 where=(df[&quot;iip_index&quot;] &gt;= df[&quot;flows_index&quot;]),
+                 alpha=0.10, color=&quot;#1a5276&quot;,
+                 label=&quot;Accumulated OVAP &gt; 0&quot;)
+ax1.fill_between(years,
+                 df[&quot;iip_index&quot;], df[&quot;flows_index&quot;],
+                 where=(df[&quot;iip_index&quot;] &lt; df[&quot;flows_index&quot;]),
+                 alpha=0.10, color=&quot;#c0392b&quot;,
+                 label=&quot;Accumulated OVAP &lt; 0&quot;)
+
+ax1.set_title(
+    f&quot;Costa Rica – Inward FDI: IIP Position vs Cumulated BOP Flows\n&quot;
+    f&quot;Index, {START_YEAR} = 100  |  {src_note}  |  BPM6&quot;
+)
+ax1.set_xlabel(&quot;Year&quot;)
+ax1.set_ylabel(f&quot;Index  ({START_YEAR} = 100)&quot;)
+ax1.set_xticks(years)
+ax1.set_xticklabels(years, rotation=45)
+ax1.yaxis.set_major_formatter(mticker.FormatStrFormatter(&quot;%.0f&quot;))
+ax1.legend(loc=&quot;upper left&quot;, fontsize=8.5)
+ax1.grid(axis=&quot;y&quot;)
+
+ax1.annotate(
+    f&quot;IIP index = IIP$_t$ / IIP$_{{\\mathbf{{{START_YEAR}}}}}$ × 100\n&quot;
+    f&quot;BOP index = (IIP$_{{{START_YEAR}}}$ + $\\Sigma$ Flow$_{{s={START_YEAR+1}}}^t$)&quot;
+    f&quot; / IIP$_{{{START_YEAR}}}$ × 100\n&quot;
+    f&quot;Aggregation: BOP annual = $\\Sigma$ quarterly flows; &quot;
+    f&quot;IIP annual = Q4 end-of-year value&quot;,
+    xy=(0.01, 0.02), xycoords=&quot;axes fraction&quot;,
+    fontsize=7, color=&quot;#444&quot;, va=&quot;bottom&quot;,
+)
+
+fig1.tight_layout()
+fig1.savefig(FIG1, dpi=150, bbox_inches=&quot;tight&quot;)
+plt.close(fig1)
+print(f&quot;\nSaved: {FIG1}&quot;)
+
+# =============================================================================
+# SECTION 8 – FIGURE 2: ANNUAL RESIDUAL  (ΔIIP_t − Flow_t)
+# =============================================================================
+
+res_yrs = df.dropna(subset=[&quot;residual_annual&quot;]).index.tolist()
+res_val = df.loc[res_yrs, &quot;residual_annual&quot;].values
+colors  = [&quot;#1a5276&quot; if v &gt;= 0 else &quot;#c0392b&quot; for v in res_val]
+
+fig2, ax2 = plt.subplots(figsize=(8, 4.8))
+
+ax2.bar(res_yrs, res_val, color=colors, width=0.6,
+        edgecolor=&quot;white&quot;, linewidth=0.5, zorder=3)
+ax2.axhline(0, color=&quot;black&quot;, linewidth=0.9, zorder=4)
+
+cum_res = float(res_val.sum())
+ax2.annotate(
+    f&quot;Cumulative residual {res_yrs[0]}–{res_yrs[-1]}:\n${cum_res:,.0f}M  &quot;
+    f&quot;({cum_res / df.loc[START_YEAR+1:END_YEAR,&#x27;delta_iip&#x27;].sum()*100:.1f}% of ΔIIP)&quot;,
+    xy=(0.97, 0.97), xycoords=&quot;axes fraction&quot;,
+    fontsize=8.5, ha=&quot;right&quot;, va=&quot;top&quot;,
+    bbox=dict(boxstyle=&quot;round,pad=0.35&quot;, facecolor=&quot;#f5f5f5&quot;,
+              edgecolor=&quot;#cccccc&quot;, alpha=0.95),
+)
+
+ax2.set_title(
+    f&quot;Costa Rica – Other Changes in Position (OVAP / Residual)\n&quot;
+    r&quot;$\Delta$IIP$_t$ $-$ BOP Flow$_t$  &quot;
+    f&quot;|  {src_note}  |  BPM6 Ch. 9&quot;
+)
+ax2.set_xlabel(&quot;Year&quot;)
+ax2.set_ylabel(&quot;Millions USD&quot;)
+ax2.set_xticks(res_yrs)
+ax2.set_xticklabels(res_yrs, rotation=45)
+ax2.yaxis.set_major_formatter(
+    mticker.FuncFormatter(lambda x, _: f&quot;${x:,.0f}M&quot;))
+ax2.grid(axis=&quot;y&quot;, zorder=0)
+
+legend_elements = [
+    Patch(facecolor=&quot;#1a5276&quot;,
+          label=&quot;Positive OVAP: IIP grew faster than flows\n&quot;
+                &quot;(valuation gains, upward statistical revisions)&quot;),
+    Patch(facecolor=&quot;#c0392b&quot;,
+          label=&quot;Negative OVAP: flows exceeded IIP growth\n&quot;
+                &quot;(valuation losses, downward revisions)&quot;),
+]
+ax2.legend(handles=legend_elements, loc=&quot;upper left&quot;, fontsize=8.5)
+
+ax2.annotate(
+    &quot;Residual$_t$ = $\\Delta$IIP$_t$ $-$ Flow$_t$ &quot;
+    &quot;(Other Changes in Position, BPM6 §9.3).\n&quot;
+    &quot;Captures price changes, exchange-rate movements, &quot;
+    &quot;reclassifications and statistical revisions.&quot;,
+    xy=(0.01, 0.02), xycoords=&quot;axes fraction&quot;,
+    fontsize=7, color=&quot;#444&quot;, va=&quot;bottom&quot;,
+)
+
+fig2.tight_layout()
+fig2.savefig(FIG2, dpi=150, bbox_inches=&quot;tight&quot;)
+plt.close(fig2)
+print(f&quot;Saved: {FIG2}&quot;)
+print(&quot;\nScript completed successfully.&quot;)
+</code></pre>
+      </details>
+    </div>
+    <div class="code">
+      <h3>3. Report (LaTeX)</h3>
+      <p>LaTeX source of the written report documenting data sources, methodology, data limitations and results for both parts.</p>
+      <p><span class="tag">LaTeX</span><span class="tag">Report</span></p>
+      <details class="code-details">
+        <summary>Show code</summary>
+        <div class="code-actions">
+          <a href="report_tradables_fdi.tex" download>Download .tex</a>
+          <button type="button" class="copy-btn" data-target="code-m3">Copy code</button>
+        </div>
+        <pre class="code-box"><code id="code-m3" class="language-latex">\documentclass[11pt, a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[top=2.2cm, bottom=2.2cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{parskip}
+% \usepackage{microtype} % disabled
+\usepackage{titlesec}
+% \usepackage{lmodern} % replaced by mlmodern
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+% ── Hyperref setup ────────────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks = true,
+    linkcolor  = blue!60!black,
+    urlcolor   = blue!60!black,
+    citecolor  = blue!60!black,
+    pdftitle   = {Tradable Prices and FDI – Argentina and Costa Rica},
+    pdfauthor  = {Camila Aguirre},
+}
+
+% ── Section formatting ────────────────────────────────────────────────────────
+\titleformat{\section}
+  {\large\bfseries\color{black!80}}{\thesection.}{0.5em}{}[\titlerule]
+\titleformat{\subsection}
+  {\normalsize\bfseries}{\thesubsection.}{0.5em}{}
+
+\titlespacing{\section}{0pt}{14pt}{6pt}
+\titlespacing{\subsection}{0pt}{10pt}{4pt}
+
+% ── Header / Footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\textit{Tradable Prices \&amp; FDI — Argentina and Costa Rica}}
+\fancyhead[R]{\small\textit{\today}}
+\fancyfoot[C]{\small Page \thepage\ of \pageref{LastPage}}
+
+% ── Caption setup ─────────────────────────────────────────────────────────────
+\captionsetup{
+    font       = small,
+    labelfont  = bf,
+    margin     = 10pt,
+    skip       = 6pt,
+}
+
+% ── Misc ──────────────────────────────────────────────────────────────────────
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\renewcommand{\arraystretch}{1.3}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+% ══════════════════════════════════════════════════════════════════════════════
+
+% ── Title block ───────────────────────────────────────────────────────────────
+\begin{center}
+    {\LARGE\bfseries Tradable and Non-Tradable Consumer Prices\\[4pt]
+     and Foreign Direct Investment}\\[8pt]
+    {\large Argentina (Part 1) \quad|\quad Costa Rica (Part 2)}\\[6pt]
+    {\large\bfseries Camila Aguirre}\\[4pt]
+    {\normalsize\color{gray}\today}
+\end{center}
+
+\vspace{4pt}
+\hrule
+\vspace{10pt}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section*{Nomenclature}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{tabular}{&gt;{\bfseries}p{3.4cm} p{10.8cm}}
+    \toprule
+    \normalfont\textbf{Acronym} &amp; \textbf{Definition} \\
+    \midrule
+    \multicolumn{2}{l}{\textit{Part 1 — Argentina}} \\[3pt]
+    CPI          &amp; Consumer Price Index \\
+    IPC          &amp; \emph{Índice de Precios al Consumidor} \\
+    IPC-GBA      &amp; IPC Gran Buenos Aires \\
+    IPC Nacional &amp; National CPI, Total Nacional \\
+    Bienes       &amp; Goods component of the IPC (tradable proxy) \\
+    Servicios    &amp; Services component of the IPC (non-tradable proxy) \\
+    YoY          &amp; Year-on-year \\
+    INDEC        &amp; \emph{Instituto Nacional de Estadística y Censos} \\[6pt]
+    \multicolumn{2}{l}{\textit{Part 2 — Costa Rica}} \\[3pt]
+    FDI          &amp; Foreign Direct Investment \\
+    IIP          &amp; International Investment Position \\
+    BOP          &amp; Balance of Payments \\
+    OVAP         &amp; \emph{Otras Variaciones de Activos y Pasivos}
+                   (Other Changes in Position) \\
+    BPM6         &amp; IMF Balance of Payments and IIP Manual, 6th Edition \\
+    BCCR         &amp; \emph{Banco Central de Costa Rica} \\
+    IMF          &amp; International Monetary Fund \\
+    \bottomrule
+\end{tabular}
+
+\vspace{12pt}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Part 1 — Argentina: Tradable and Non-Tradable Consumer Prices}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Data Sources}
+
+All data are sourced from \textbf{INDEC} (Instituto Nacional de Estadística y
+Censos), the official Argentine statistical authority
+(\url{https://www.indec.gob.ar}).
+
+Argentina&#x27;s CPI statistics are produced by two surveys that are spliced
+to cover the full 2010--present period. The current \textbf{IPC Nacional}
+(Total Nacional, base December~2016\,=\,100) was launched in December~2016;
+prior to that, the \textbf{IPC-GBA} (Greater Buenos Aires, same base) is
+used as the bridging source for April–November~2016. Before April~2016 no
+official series with this methodology is available, so a statistical
+backcast is applied (see below).
+
+The two files downloaded at runtime are:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \texttt{sh\_ipc\_aperturas.xls}, sheet \emph{Índices aperturas}:
+          IPC Nacional, base December~2016\,=\,100, December~2016 to present.
+
+    \item \texttt{sh\_ipc\_12\_16.xls}: IPC-GBA, base December~2016\,=\,100,
+          April–November~2016. Used as the bridge to the backcast period.
+\end{itemize}
+
+Both files are downloaded programmatically at runtime via \texttt{requests};
+no manual file handling is required.
+
+\subsection{Classification: Tradable vs.\ Non-Tradable}
+
+The Bienes / Servicios split published by INDEC is used directly as the
+tradable / non-tradable classification, following the
+\textbf{Balassa--Samuelson framework}:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{Tradable} $\equiv$ \emph{Bienes} (goods): prices of goods
+          are arbitraged across borders through international trade and
+          exchange-rate movements. The categories included are Food \&amp;
+          non-alcoholic beverages (20.40\%), Alcoholic beverages \&amp; tobacco
+          (3.09\%), Clothing \&amp; footwear (5.53\%), and Household equipment
+          (5.49\%), with a combined INDEC weight of 34.51\%.
+
+    \item \textbf{Non-Tradable} $\equiv$ \emph{Servicios} (services): service
+          prices are predominantly determined by domestic costs (wages, rents)
+          and face limited international competition. The categories included
+          are Housing \&amp; utilities (14.01\%), Health (9.51\%), Transport
+          (11.34\%), Communication (3.36\%), Recreation (7.68\%), Education
+          (6.46\%), Restaurants \&amp; hotels (8.47\%), and Miscellaneous
+          (4.66\%), with a combined weight of 65.49\%.
+\end{itemize}
+
+\textit{Note}: The residual categories not assigned to either group
+(primarily those with mixed tradability) represent a minor share of the
+basket and are excluded from the incidence calculation; overall CPI
+(\emph{Nivel General}) is retained as the reference total.
+
+\subsection{Data Processing and Construction}
+
+\textbf{Step 1 — Dec~2016–present (IPC Nacional).}
+The \emph{Bienes} and \emph{Servicios} index rows are read directly from
+\texttt{sh\_ipc\_aperturas.xls}. If the direct rows are absent, a weighted
+average over the constituent divisions is computed using the INDEC weights
+listed above.
+
+\textbf{Step 2 — Apr–Nov~2016 (IPC-GBA bridge).}
+The \emph{Bienes} and \emph{Servicios} rows are read from
+\texttt{sh\_ipc\_12\_16.xls}. Both surveys share December~2016\,=\,100 as
+their base, so the two segments are \textbf{spliced directly at the level
+without any rescaling}.
+
+\textbf{Step 3 — Backcast Jan~2010–Mar~2016.}
+
+\begin{center}
+\colorbox{yellow!20}{%
+\begin{minipage}{0.93\textwidth}
+\small
+\textbf{\color{red!70!black}Data Limitation — Pre-2016 period.}
+No official INDEC series with the December~2016 base extends before
+April~2016. The Jan~2010--Mar~2016 segment is a \textbf{statistical
+backcast}, not observed data, and should be \textbf{used with caution}.
+It is shaded in all charts to signal this limitation.
+\end{minipage}}
+\end{center}
+
+\vspace{4pt}
+
+A \textbf{log-linear trend} is fitted by OLS on the April–November~2016
+window (8~observations):
+\[
+    \ln P_t \;=\; a + b\,t \;+\; \varepsilon_t
+\]
+The estimated monthly growth rate $\hat{b}$ implies annual rates of
+approximately 25–35\% for \emph{Bienes} and 20–30\% for \emph{Servicios},
+consistent with third-party inflation estimates for Argentina in 2010--2016.
+The backcast is:
+\[
+    \hat{P}_{t-k} \;=\; P_{\text{Apr\,2016}} \cdot e^{-\hat{b}\,k}
+\]
+
+\textbf{Step 4 — Rebase to January~2010\,=\,100.}
+The three segments are concatenated, de-duplicated, and rescaled so that
+January~2010\,=\,100 for all series.
+
+\textbf{Step 5 — Derived indicators.}
+Year-on-year (YoY) inflation is the 12-month percentage change of the index.
+Monthly incidence is:
+\[
+    \text{Inc}_{i,t} \;=\; w_i \times \Delta\%P_{i,t}
+\]
+where $w_i$ is the INDEC base-Dec-2016 weight and $\Delta\%P_{i,t}$ the
+monthly percentage change of component~$i$.
+
+\subsection{Results}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{fig1_yoy_inflation.pdf}
+    \caption{%
+        \textbf{Year-on-year CPI inflation — Tradable vs.\ Non-Tradable
+        (Argentina, 2010–present).}
+        The orange line shows annual inflation for \emph{Bienes} (tradable
+        goods); the blue dashed line shows \emph{Servicios} (non-tradable
+        services). Both series are indexed to January~2010\,=\,100 and
+        YoY changes are computed as 12-month percentage changes.
+        The shaded area (2010–2016) corresponds to the log-linear
+        backcast; the vertical dotted line marks the Dec~2016 splice
+        between IPC-GBA and IPC Nacional.
+        \textit{Source: INDEC (\texttt{sh\_ipc\_aperturas.xls},
+        \texttt{sh\_ipc\_12\_16.xls}).}
+    }
+    \label{fig:yoy}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{fig2_monthly_incidence.pdf}
+    \caption{%
+        \textbf{Monthly CPI incidence by component — Tradable vs.\
+        Non-Tradable (Argentina, recent 5~years).}
+        Stacked bars decompose the monthly change of the overall CPI
+        (\emph{Nivel General}) into the contribution of \emph{Bienes}
+        (tradable, orange) and \emph{Servicios} (non-tradable, blue).
+        The black line shows the total monthly CPI change for reference.
+        Incidence is computed as $w_i \times \Delta\%P_{i,t}$ using
+        fixed INDEC weights (base December~2016).
+        Positive bars indicate upward price pressure; negative bars
+        indicate downward contributions in that month.
+        \textit{Source: INDEC (\texttt{sh\_ipc\_aperturas.xls}).}
+    }
+    \label{fig:incidence}
+\end{figure}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Part 2 — Costa Rica: FDI, IIP vs.\ Balance of Payments}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Data Sources}
+
+\textbf{Primary source}: IMF Balance of Payments and International
+Investment Position Statistics, accessed via the public
+\textbf{IMF SDMX-JSON REST API}
+(\url{https://data.imf.org/en/Resource-Pages/IMF-API}).
+No authentication is required. The dataset covers over 190~economies
+under the BPM6 framework.
+
+\textbf{Fallback source}: If the API is unreachable at runtime, the
+script uses hardcoded values transcribed from the
+\textbf{Banco Central de Costa Rica (BCCR)} official statistical portal,
+accessed on 25~May~2025. The BCCR is
+the national compiler of BOP and IIP statistics for Costa Rica and
+submits these figures to the IMF; the two sources are therefore
+consistent.
+
+The two series collected are:
+
+\begin{center}
+\begin{tabular}{&gt;{\ttfamily}l l l}
+    \toprule
+    \normalfont\textbf{Indicator} &amp; \textbf{Description} &amp; \textbf{Sign convention} \\
+    \midrule
+    BFDI\_BP6\_USD &amp; Financial acct., direct investment,
+                     net incurrence of liabilities &amp; $+$ = net inflow \\
+    ILFD\_BP6\_USD &amp; IIP liabilities, direct investment
+                     (end-of-period stock)         &amp; $+$ = outstanding stock \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+Both indicators measure \emph{inward} FDI from the liability side of
+Costa Rica&#x27;s balance sheet and share the same BPM6 sign convention.
+
+\subsection{Aggregation from Quarterly to Annual}
+
+The IMF BOP dataset publishes data at \textbf{quarterly} frequency.
+Annual series are constructed as follows:
+
+\begin{itemize}[leftmargin=1.5em, itemsep=2pt]
+    \item \textbf{BOP flows} (\texttt{BFDI\_BP6\_USD}):
+          Annual\,=\,\textbf{sum} of Q1\,+\,Q2\,+\,Q3\,+\,Q4.
+          \textit{Justification}: flows are additive across time
+          sub-periods — a transaction recorded in Q2 is economically
+          equivalent to one in Q4 (BPM6~§3.7). Summing gives total
+          transactions during the calendar year.
+
+    \item \textbf{IIP stock} (\texttt{ILFD\_BP6\_USD}):
+          Annual\,=\,\textbf{Q4 end-of-year value} (31~December).
+          \textit{Justification}: stocks represent a balance at a
+          specific point in time, not cumulative transactions.
+          Averaging or summing quarterly stocks would be conceptually
+          incorrect (BPM6~§7.4). The year-end (Q4) value is the
+          standard annual IIP benchmark.
+\end{itemize}
+
+\subsection{Sign Convention Verification}
+
+The script verifies empirically that both series use compatible sign
+conventions by checking three conditions: (i)~the majority of annual
+BOP flow observations are positive (net inflows); (ii)~the IIP stock
+is consistently positive and generally increasing; and
+(iii)~the correlation between cumulated BOP flows and the IIP stock
+exceeds 0.90. For Costa Rica, all three conditions are satisfied
+(correlation\,$\approx$\,0.997), confirming that \textbf{no sign
+adjustment is required}.
+
+\subsection{Indicator Construction}
+
+The BPM6 reconciliation identity (Chapter~9) states:
+\[
+    \text{IIP}_t \;=\; \text{IIP}_{t-1}
+                 \;+\; \text{Flow}_t
+                 \;+\; \text{OtherChanges}_t
+\]
+where \emph{OtherChanges} (OVAP in Spanish) captures valuation
+effects (price and exchange-rate changes), reclassifications, and
+statistical revisions not recorded as transactions.
+
+The \textbf{annual residual} is:
+\[
+    \text{Residual}_t \;=\; \Delta\text{IIP}_t \;-\; \text{Flow}_t
+\]
+
+\textbf{Index construction.}
+To make the IIP stock (a level) and BOP flows (period transactions)
+directly comparable on a single chart, both are expressed as index
+numbers with base year 2015\,=\,100:
+\[
+    \text{IIP index}_t
+        \;=\; \frac{\text{IIP}_t}{\text{IIP}_{2015}} \times 100
+\]
+\[
+    \text{BOP index}_t
+        \;=\; \frac{\text{IIP}_{2015} + \sum_{s=2016}^{t}\text{Flow}_s}
+                   {\text{IIP}_{2015}} \times 100
+\]
+The BOP index is the \emph{flow-implied position}: the level the IIP
+stock would reach if only BOP-recorded transactions had driven it,
+anchored to the actual 2015 level. The vertical gap between the two
+lines equals the accumulated OVAP residual.
+
+\clearpage
+\subsection{Results}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{figure1_fdi_index.pdf}
+    \caption{%
+        \textbf{Inward FDI — IIP position vs.\ cumulated BOP flows,
+        index 2015\,=\,100 (Costa Rica, 2015–2024).}
+        The blue line (\emph{IIP index}) shows how the end-of-year
+        inward FDI stock has evolved relative to 2015.
+        The red dashed line (\emph{BOP cumulated-flows index}) shows
+        what the stock would be if only BOP-recorded transactions had
+        driven it (anchored to the 2015 IIP level).
+        The shaded gap between the two lines represents the
+        accumulated Other Changes in Position (OVAP): valuation effects,
+        exchange-rate changes, reclassifications, and statistical
+        revisions. A positive gap indicates the IIP stock grew faster
+        than transactions alone would imply.
+        \textit{Source: IMF BOP/IIP dataset — SDMX-JSON API
+        (\texttt{BFDI\_BP6\_USD}, \texttt{ILFD\_BP6\_USD}); fallback:
+        BCCR. Framework: BPM6.}
+    }
+    \label{fig:fdi_index}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{figure2_fdi_residual.pdf}
+    \caption{%
+        \textbf{Other Changes in Position (OVAP / Residual):
+        $\Delta\text{IIP}_t - \text{Flow}_t$
+        (Costa Rica, 2016–2024).}
+        Each bar shows the annual residual between the change in the
+        IIP position and the net FDI flow recorded in the Balance of
+        Payments. A \textbf{blue} (positive) bar indicates that the
+        IIP stock grew \emph{more} than the recorded flow — consistent
+        with valuation gains or upward statistical revisions.
+        A \textbf{red} (negative) bar indicates the reverse.
+        The annotation box reports the cumulative residual over the
+        full period and its share of total $\Delta\text{IIP}$.
+        \textit{Source: IMF BOP/IIP dataset — SDMX-JSON API
+        (\texttt{BFDI\_BP6\_USD}, \texttt{ILFD\_BP6\_USD}); fallback:
+        BCCR. Framework: BPM6, Chapter~9.}
+    }
+    \label{fig:fdi_residual}
+\end{figure}
+
+% ── Footer note ───────────────────────────────────────────────────────────────
+\vfill
+\begin{center}
+    \small\color{gray}
+    All Python scripts used to produce the figures are provided
+    alongside this report and are executable end-to-end without
+    manual intervention.
+\end{center}
+
+\end{document}
+</code></pre>
       </details>
     </div>
   </main>
