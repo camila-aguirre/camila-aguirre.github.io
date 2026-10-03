@@ -1,16 +1,6 @@
 ************************************************
 *** BUILD IRREGULAR RAIN MEASURE ***************
 
-
-
-***********************************************************************
-*** 10. BUILD IRREGULAR RAIN MEASURE WITH DAILY Rainfall Data  ***
-
-* Project: Weather Shocks and Migration Responses in Senegal
-* Author: Nils Haveresch
-* Last edited: 11 April 2026
-***********************************************************************
-
 clear all
 version 16.1
 set more off
@@ -39,11 +29,6 @@ use "$data/GSMAP_Senegal_Villages_2010_2024.dta", replace
 // Prepare data
 /////////////////////////////
 
-
-* IF APPLICABLE: replace missing values for department and region
-rename dailyprecipgc precipitation
-drop longitude latitude dailyprecip gaugequalityinfo region
-
 merge m:1 ea_id using village_sample_V0.dta
 
 drop _merge
@@ -51,9 +36,6 @@ drop _merge
 * [Village-specific corrections of department/region names omitted for confidentiality]
 
 ***********************************************************
-
-
-
 *****************************************************
 // Step 1: Convert and extract date components
 *****************************************************
