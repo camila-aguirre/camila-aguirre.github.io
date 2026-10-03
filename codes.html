@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codes – Camila Aguirre Diaz</title>
+<meta name="description" content="Camila Aguirre Diaz — Applied economist working on climate, agriculture and development.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --text: #333;
+    --muted: #6b6b6b;
+    --line: #e8e8e8;
+    --link: #2a7ab0;
+    --accent: #1f4e79;
+    --bg: #fff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Lato", "Helvetica Neue", Arial, sans-serif; color: var(--text); background: var(--bg); line-height: 1.6; font-size: 16px; }
+  a { color: var(--link); }
+  a:hover { color: var(--accent); }
+
+  /* Top bar */
+  header { border-bottom: 1px solid var(--line); }
+  .nav { max-width: 1060px; margin: 0 auto; padding: 18px 24px; display: flex; gap: 40px; align-items: center; flex-wrap: wrap; }
+  .nav .brand { font-weight: 700; color: #555; text-decoration: none; font-size: 17px; }
+  .nav a.item { color: #777; text-decoration: none; }
+  .nav a.item:hover { color: var(--accent); }
+
+  /* Layout */
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 36px 24px 60px; display: grid; grid-template-columns: 240px 1fr; gap: 56px; }
+  @media (max-width: 760px) { .wrap { grid-template-columns: 1fr; gap: 28px; } aside { text-align: center; } aside ul { display: inline-block; text-align: left; } }
+
+  /* Sidebar */
+  .avatar { width: 170px; height: 170px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; box-shadow: 0 0 0 1px var(--line); display: block; }
+  @media (max-width: 760px) { .avatar { margin: 0 auto; } }
+  .avatar-fallback { width: 170px; height: 170px; border-radius: 50%; background: var(--accent); color: #fff; display: none; align-items: center; justify-content: center; font-size: 52px; font-weight: 700; }
+  aside h1 { font-size: 18px; margin: 20px 0 4px; }
+  aside .role { color: var(--muted); font-size: 15px; margin: 0 0 18px; }
+  aside ul { list-style: none; padding: 0; margin: 0; font-size: 15px; }
+  aside li { margin: 9px 0; display: flex; gap: 10px; align-items: center; }
+  aside li svg { width: 16px; height: 16px; fill: #444; flex: none; }
+  aside li a { color: #444; text-decoration: none; }
+  aside li a:hover { color: var(--accent); }
+
+  /* Main */
+  main p.intro { margin-top: 0; }
+  h2 { font-size: 20px; font-weight: 700; margin: 0 0 8px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .entry { margin: 22px 0; }
+  .entry h3 { font-size: 16px; margin: 0 0 4px; }
+  .entry .meta { margin: 2px 0; color: #555; }
+  .entry .links { margin: 4px 0; font-size: 15px; }
+  .exp { display: grid; grid-template-columns: 130px 1fr; gap: 4px 18px; margin: 16px 0; }
+  .exp .when { color: var(--muted); font-size: 15px; }
+  .exp .what strong { display: block; }
+  @media (max-width: 560px) { .exp { grid-template-columns: 1fr; } }
+
+  /* Courses */
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: var(--link); font-size: 15px; }
+  .cat { font-style: italic; color: #555; margin: 18px 0 6px; font-weight: 700; font-size: 15px; }
+  .course { display: grid; grid-template-columns: 110px 1fr; gap: 14px; font-size: 15px; margin: 5px 0; }
+  .course .d { color: var(--muted); white-space: nowrap; }
+  footer { border-top: 1px solid var(--line); color: #999; font-size: 13px; text-align: center; padding: 18px; }
+  .nav a.item.active { color: #333; font-weight: 700; }
+  .code { margin: 22px 0; }
+  .code h3 { font-size: 16px; margin: 0 0 4px; }
+  .code p { margin: 2px 0; color: #555; }
+  .tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; background: #eef3f8; color: var(--accent); margin-right: 4px; }
+  .cv-btn { display: inline-block; padding: 8px 18px; border: 1px solid var(--accent); border-radius: 4px; color: var(--accent); text-decoration: none; font-weight: 700; font-size: 15px; }
+  .cv-btn:hover { background: var(--accent); color: #fff; }
+  main h2#courses { margin-top: 36px; }
+  .code { margin: 22px 0; }
+  .code h3 { font-size: 16px; margin: 0 0 4px; }
+  .code p { margin: 2px 0; color: #555; }
+  .tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; background: #eef3f8; color: var(--accent); margin-right: 4px; }
+  .code-actions { display: flex; gap: 14px; align-items: center; margin: 10px 0 8px; font-size: 15px; }
+  .copy-btn { font: inherit; font-size: 14px; color: var(--link); background: none; border: 1px solid var(--line); border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  main { min-width: 0; }
+  .code-box { max-height: 520px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; margin: 0; font-size: 13px; line-height: 1.5; }
+  .code-box code.hljs { padding: 14px 16px; background: #f8f9fb; }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/r.min.js"></script>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <a class="brand" href="index.html">Camila Aguirre Diaz</a>
+    <a class="item" href="index.html">Courses</a>
+    <a class="item active" href="codes.html">Codes</a>
+  </nav>
+</header>
+
+<div class="wrap">
+  <aside>
+    <img class="avatar" src="photo.jpg" alt="Camila Aguirre Diaz"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+    <div class="avatar-fallback">CA</div>
+    <h1>Camila Aguirre Diaz</h1>
+    <p class="role">Applied Economist</p>
+    <ul>
+      <li><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>Munich, Germany</li>
+      <li><svg viewBox="0 0 24 24"><path d="M4 6h16v1.2l-8 5-8-5V6zm0 3.6V18h16V9.6l-8 5-8-5z"/></svg><a href="mailto:cami_isa16@hotmail.com">Email</a></li>
+      <li><svg viewBox="0 0 24 24"><path d="M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm3.3 7.5H5V18h2.3v-7.5zM6.2 6.3a1.3 1.3 0 1 0 0 2.6 1.3 1.3 0 0 0 0-2.6zM19 13.6c0-2.2-1.2-3.3-2.9-3.3-1.3 0-1.9.7-2.2 1.2v-1H11.6c0 .7 0 7.5 0 7.5h2.3v-4.2c0-.2 0-.4.1-.6.2-.4.6-.9 1.3-.9.9 0 1.3.7 1.3 1.7V18H19v-4.4z"/></svg><a href="https://www.linkedin.com/in/camila-aguirre-b03a9317b/">LinkedIn</a></li>
+      <li><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7c-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg><a href="https://github.com/camila-aguirre">GitHub</a></li>
+    <li><svg viewBox="0 0 24 24"><path d="M6 2h8l6 6v14H6V2zm7 1.5V9h5.5L13 3.5zM12 11v6.2l-2.3-2.3-1.1 1.1 4.1 4.1 4.1-4.1-1.1-1.1-2.2 2.3V11h-1.5z"/></svg><a href="cv.pdf" download>CV</a></li>
+    </ul>
+  </aside>
+
+  <main>
+    <h2>Codes</h2>
+
+    <div class="code">
+      <h3>Senegal Rainfall Shock Maps</h3>
+      <p>R code mapping post-onset rainfall anomalies (30 days after rainy-season onset, TAMSAT) for survey villages in Senegal by agro-ecological zone, 2021–2023. Control villages are shown as circles and treated villages as squares, on a colour scale fixed at ±80% so years are comparable. The input data are confidential and not included.</p>
+      <p><span class="tag">R</span><span class="tag">terra</span><span class="tag">Climate data</span></p>
+      <div class="code-actions">
+        <a href="rainfall_shock_maps.R" download>Download .R</a>
+        <button type="button" class="copy-btn" data-target="code-rain">Copy code</button>
+      </div>
+      <pre class="code-box"><code id="code-rain" class="language-r"># ==============================================================================
+# SENEGAL RAINFALL SHOCK MAPS (2021-2023)
+# Project: Climate migration and mediators
+# Variable: % Deviation from Long-Term Mean (Post-Onset 30 Days)
+# ==============================================================================
+
+# Author: Camila Aguirre Diaz
+#
+# All paths are relative to the project folder (open the .Rproj or set the
+# working directory to this folder before running).
+
+# Load necessary libraries
+library(&#x27;readr&#x27;)
+library(&#x27;terra&#x27;)
+library(&#x27;tidyverse&#x27;)
+library(&#x27;haven&#x27;)
+
+# --- 1. Load Spatial and Base Data ---
+
+# Shapefile for Senegal borders
+shp_path &lt;- file.path(&quot;data&quot;, &quot;AEZ_shapefile&quot;, &quot;AEZ_SEN.shp&quot;)
+senegal  &lt;- vect(shp_path)
+
+
+# Prepare region labels: remove accents and ensure coordinate system matches GPS
+# senegal$clean_name &lt;- iconv(senegal$name, to=&#x27;ASCII//TRANSLIT&#x27;)
+senegal &lt;- project(senegal, &quot;EPSG:4326&quot;)
+
+# Village coordinates
+villages_gps &lt;- read.csv(file.path(&quot;data&quot;, &quot;villages_jittered_only.csv&quot;), sep = &quot;;&quot;)
+
+
+# Main treatment data (processed in Stata to include rain_pct_deviation, DS30)
+treat_data_path &lt;- file.path(&quot;data&quot;, &quot;Building_Treatment_map_2010_2024.dta&quot;)
+treat_data &lt;- read_dta(treat_data_path)
+
+
+# --- 2. Global Plotting Settings ---
+
+# We fix the scale at +/- 80% across all years to ensure they are comparable.
+# This ensures a specific shade of brown always represents the same % deficit.
+rain_limit &lt;- 80 
+rain_range &lt;- c(-rain_limit, rain_limit)
+
+# Output directory
+out_dir &lt;- &quot;output&quot;
+dir.create(out_dir, showWarnings = FALSE)
+
+# --- 3. Loop Through Years to Generate Maps ---
+
+years_to_map &lt;- c(2021, 2022, 2023)
+
+for (yr in years_to_map) {
+  
+  # A. Filter and Join Data for the specific year
+  rain_data_yr &lt;- treat_data %&gt;%
+    filter(year == yr) %&gt;%
+    select(ea_id, rain_pct_deviation_tamsat, DS30_tamsat) %&gt;% 
+    left_join(villages_gps, by = &quot;ea_id&quot;) %&gt;%
+    drop_na(rain_pct_deviation_tamsat, longitude_jit, latitude_jit, DS30_tamsat)%&gt;%
+    # FIX: Clamp the values so they don&#x27;t fall outside the map range
+    mutate(
+      rain_pct_deviation_tamsat = pmin(pmax(rain_pct_deviation_tamsat, -rain_limit), rain_limit)
+    )
+  
+  # B. Convert to spatial points (SpatVector)
+  rain_spat &lt;- vect(rain_data_yr, 
+                    geom = c(&quot;longitude_jit&quot;, &quot;latitude_jit&quot;), 
+                    crs = &quot;EPSG:4326&quot;)
+  
+  rain_spat_control &lt;- rain_spat[rain_spat$DS30_tamsat == 0, ]
+  rain_spat_treated &lt;- rain_spat[rain_spat$DS30_tamsat == 1, ]
+  
+  # C. Set File Path for this year
+  file_name &lt;- paste0(&quot;rainfall_pct_deviation_AEZ_tamsat&quot;, yr, &quot;.png&quot;)
+  full_out_path &lt;- file.path(out_dir, file_name)
+  
+  # D. Start Graphics Device
+  png(filename = full_out_path, width = 3000, height = 2000, res = 300)
+  
+  # --- Update Margins and Device ---
+  # Increase top margin (3rd value) to 5 or 6 to clear the legend
+  par(mar = c(2, 2, 4, 12), xpd = NA) 
+  
+  # --- Layer 1: Base Map ---
+  plot(senegal, 
+       col = &quot;grey95&quot;, 
+       border = &quot;grey40&quot;, 
+       lwd = 0.6, 
+       axes = FALSE,
+       main = paste(&quot;Post-Onset Rainfall Anomaly (30 Days),&quot;, yr))
+  
+  # Define palette once
+  cols_full &lt;- hcl.colors(50, &quot;BrBG&quot;, rev = FALSE)
+  
+  # Remove the very light middle part
+  cols &lt;- cols_full[c(1:20, 31:50)]
+  
+  # --- Controls (circles WITH legend) ---
+  plot(rain_spat_control, &quot;rain_pct_deviation_tamsat&quot;,
+       col = cols,
+       pch = 16,
+       cex = 1.2,
+       add = TRUE,
+       type = &quot;continuous&quot;,
+       range = rain_range,
+       plg = list(
+         x = -12.1,
+         y = 16.1,
+         title = &quot;Mean Deviation (%)\n &quot;,
+         title.cex = 0.8,
+         title.font = 2,
+         title.x = -12.1,
+         title.y = 16.1,
+         at = c(80, 40, 0, -40, -80),
+         labels = c(&quot;+80%&quot;, &quot;+40%&quot;, &quot;Normal&quot;, &quot;-40%&quot;, &quot;-80%&quot;),
+         inset = c(-0.15, 0.1),
+         shrink = 0.6
+       ))
+  
+  # --- Treated (squares, NO legend) ---
+  plot(rain_spat_treated, &quot;rain_pct_deviation_tamsat&quot;,
+       col = cols,
+       pch = 15,
+       cex = 1.4,
+       add = TRUE,
+       type = &quot;continuous&quot;,
+       range = rain_range,
+       legend = FALSE)
+  
+  # --- Treatment legend ---
+  legend(legend = c(&quot;Control&quot;, &quot;Treated&quot;),
+         x = -12.2,
+         y = 15.3,
+         pch = c(1, 0),
+         pt.cex = c(1.2, 1.4),
+         bty = &quot;n&quot;)
+  
+  # G. Layer 3: Region Labels
+  others &lt;- senegal[senegal$AEZ != &quot;Senegal River Valley&quot;, ]
+  text(centroids(others), &quot;AEZ&quot;, cex = 0.6, col = &quot;black&quot;, family = &quot;sans&quot;, font = 3)
+  
+  # 2. Plot the Senegal River Valley at a specific coordinate of your choice
+  text(x = -13.9, y = 16.4, labels = &quot;Senegal River Valley&quot;, 
+       cex = 0.6, col = &quot;black&quot;, family = &quot;sans&quot;, font = 3)
+  
+  
+  # Close and save
+  dev.off()
+  
+  # Print progress to console
+  message(paste(&quot;Successfully generated map for:&quot;, yr))
+}
+
+# ==============================================================================
+# SCRIPT COMPLETE
+# ==============================================================================</code></pre>
+    </div>
+
+  </main>
+</div>
+
+<footer>© 2026 Camila Aguirre Diaz</footer>
+<script>
+  if (window.hljs) hljs.highlightAll();
+  document.querySelectorAll('.copy-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = document.getElementById(b.dataset.target).innerText;
+      navigator.clipboard.writeText(t).then(function () {
+        b.textContent = 'Copied!'; setTimeout(function () { b.textContent = 'Copy code'; }, 1500);
+      });
+    });
+  });
+</script>
+</body>
+</html>
