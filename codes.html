@@ -128,7 +128,7 @@
     <h2>Codes</h2>
 
     <div class="group">
-      <h3 class="group-title">Master's Thesis – Climate Variability and Agricultural Conditions in Senegal</h3>
+      <h3 class="group-title">Master's Thesis (Passau) – Climate Variability and Agricultural Conditions in Senegal</h3>
       <p class="group-note">University of Passau, 2025. Comparison of farmers' local weather perceptions with satellite weather data. Scripts are listed in the order they are run; the survey and climate data are not included.</p>
     </div>
     <div class="code">
@@ -2132,6 +2132,681 @@ putdocx save &quot;$res/balance_drought_baseline.docx&quot;, replace
       </details>
     </div>
 
+
+    <div class="group">
+      <h3 class="group-title">Master's Thesis (UOC) – Dynamics and Structure of the Ecuadorian Labour Market, 2007–2019</h3>
+      <p class="group-note">Universitat Oberta de Catalunya, 2022. Labour-market transitions and their determinants using the longitudinal ENEMDU survey (INEC). Survey microdata are not included.</p>
+    </div>
+    <div class="code">
+      <h3>1. Labour-Market Transition Matrices</h3>
+      <p>Recodes labour-force status into seven categories (adequate employment, time- and income-related underemployment, other inadequate employment, unpaid work, unemployment and inactivity) and builds weighted year-to-year transition matrices for six ENEMDU panels between 2007 and 2019.</p>
+      <p><span class="tag">Stata</span><span class="tag">Markov chains</span><span class="tag">Panel survey</span></p>
+      <details class="code-details">
+        <summary>Show code</summary>
+        <div class="code-actions">
+          <a href="uoc_1_transition_matrices.do" download>Download .do</a>
+          <button type="button" class="copy-btn" data-target="code-u1">Copy code</button>
+        </div>
+        <pre class="code-box"><code id="code-u1" class="language-stata">*==============================================================================
+* Master&#x27;s thesis, Universitat Oberta de Catalunya (UOC), 2022 - Camila Aguirre Diaz
+* Dynamics and structure of the Ecuadorian labour market, 2007-2019 (ENEMDU, INEC)
+* Set the global below to your project folder. ENEMDU panel data are not included.
+*==============================================================================
+global dir &quot;.&quot;   // change to your project folder
+global data &quot;$dir/DATA&quot;
+global res  &quot;$dir/RESULTS&quot;
+
+*====Matriz de transicion 2007-2008====
+use &quot;$data/2007-2008 CONDACTN.dta&quot;, clear
+tab condact_nt_07 condact_nt_08  [iw= fexpmatc], row nofreq // crear matriz de transicion 
+**** Matriz de transicion 2009-2010
+use &quot;$data/2009-2010 CONDACTN.dta&quot;, clear
+tab condact_nt_09 condact_nt_10  [iw= fexpmatch],row nofreq  // crear matriz de transicion 
+**** Matriz de transicion 2011-2012
+use &quot;$data/2011-2012 CONDACTN.dta&quot;, clear
+tab condact_nt_11 condact_nt_12  [iw= fexpmatch],row nofreq // crear matriz de transicion 
+*=== Matriz de transicion 2013-2014====*
+use &quot;$data/A14.CONDACT_15 años y más dic13_dic14.dta&quot;, clear
+numlabel,  add
+tab CONDACTN_42
+tab CONDACTN_46
+* Crear la variable condact_t para cada panel
+***2013
+recode CONDACTN_42 (0 6 = .) (1 = 0 &quot;Adecuado&quot;) ( 2 = 1 &quot;Sub por tiempo&quot;) (3 = 2 &quot;Sub por ingresos&quot;)(4 = 3 &quot;Otro Inadec&quot;) ///
+ (5 = 4 &quot;No remunerado&quot;) (7/8 = 5 &quot;Desempleo&quot;) (9 = 6 &quot;Inactividad&quot;), gen(condact_nt_13) label(condact_nt_13)
+recast byte condact_nt_13
+**2014
+recode CONDACTN_46 (0 6 = .) (1 = 0 &quot;Adecuado&quot;) ( 2 = 1 &quot;Sub por tiempo&quot;) (3 = 2 &quot;Sub por ingresos&quot;)(4 = 3 &quot;Otro Inadec&quot;) ///
+ (5 = 4 &quot;No remunerado&quot;) (7/8 = 5 &quot;Desempleo&quot;) (9 = 6 &quot;Inactividad&quot;), gen(condact_nt_14) label(condact_nt_14)
+recast byte condact_nt_14
+tab condact_nt_13 condact_nt_14 [iw= fexpmatc],row nofreq // crear matriz de transicion 
+*=====Matriz de transicion 2015-2016======*-
+use &quot;$data/A19.CONDACT_15 años y más_dic15_dic16.dta&quot;, clear
+numlabel,  add
+tab CONDACTN_50
+tab CONDACTN_54
+* Crear la variable condact_t para cada panel
+***2015
+recode CONDACTN_50 (0 6 = .) (1 = 0 &quot;Adecuado&quot;) ( 2 = 1 &quot;Sub por tiempo&quot;) (3 = 2 &quot;Sub por ingresos&quot;)(4 = 3 &quot;Otro Inadec&quot;) ///
+ (5 = 4 &quot;No remunerado&quot;) (7/8 = 5 &quot;Desempleo&quot;) (9 = 6 &quot;Inactividad&quot;), gen(condact_nt_15) label(condact_nt_15)
+recast byte condact_nt_15
+**2016
+recode CONDACTN_54 (0 6 = .) (1 = 0 &quot;Adecuado&quot;) ( 2 = 1 &quot;Sub por tiempo&quot;) (3 = 2 &quot;Sub por ingresos&quot;)(4 = 3 &quot;Otro Inadec&quot;) ///
+ (5 = 4 &quot;No remunerado&quot;) (7/8 = 5 &quot;Desempleo&quot;) (9 = 6 &quot;Inactividad&quot;), gen(condact_nt_16) label(condact_nt_16)
+recast byte condact_nt_16
+tab condact_nt_15 condact_nt_16 [iw= fexpmatch],row nofreq // crear matriz de transicion 
+*====== Matriz de transicion 2018-2019======**-
+use &quot;$data/Base_Match_dic18_dic19.dta&quot;, clear
+numlabel,  add
+tab CONDACT_dic18
+tab CONDACT_dic19
+//debe estar en formato wide 
+**2018
+recode CONDACT_dic18 (0 6 = .) (1 = 0 &quot;Adecuado&quot;) ( 2 = 1 &quot;Sub por tiempo&quot;) (3 = 2 &quot;Sub por ingresos&quot;)(4 = 3 &quot;Otro Inadec&quot;) ///
+ (5 = 4 &quot;No remunerado&quot;) (7/8 = 5 &quot;Desempleo&quot;) (9 = 6 &quot;Inactividad&quot;), gen(condact_nt_18) label(condact_nt_18)
+recast byte condact_nt_18
+**2019
+recode CONDACT_dic19 (0 6 = .) (1 = 0 &quot;Adecuado&quot;) ( 2 = 1 &quot;Sub por tiempo&quot;) (3 = 2 &quot;Sub por ingresos&quot;)(4 = 3 &quot;Otro Inadec&quot;) ///
+ (5 = 4 &quot;No remunerado&quot;) (7/8 = 5 &quot;Desempleo&quot;) (9 = 6 &quot;Inactividad&quot;), gen(condact_nt_19) label(condact_nt_19)
+recast byte condact_nt_19
+
+tab condact_nt_18 condact_nt_19 [iw= fexpmatch], row nofreq // crear matriz de transicion 
+
+// luego saco las tasas como porcentaje dividendo la categoria por el valor total final en forma de filas
+</code></pre>
+      </details>
+    </div>
+    <div class="code">
+      <h3>2. Multinomial Logit of Labour-Market Status</h3>
+      <p>Weighted multinomial logit models of labour-market status on schooling, sex, ethnicity, age, marital status and area, with predicted probabilities by years of schooling, sex and ethnic group, marginal effects, odds ratios and comparisons across periods.</p>
+      <p><span class="tag">Stata</span><span class="tag">Multinomial logit</span><span class="tag">SPost13</span><span class="tag">Labour economics</span></p>
+      <details class="code-details">
+        <summary>Show code</summary>
+        <div class="code-actions">
+          <a href="uoc_2_multinomial_logit.do" download>Download .do</a>
+          <button type="button" class="copy-btn" data-target="code-u2">Copy code</button>
+        </div>
+        <pre class="code-box"><code id="code-u2" class="language-stata">*==============================================================================
+* Master&#x27;s thesis, Universitat Oberta de Catalunya (UOC), 2022 - Camila Aguirre Diaz
+* Dynamics and structure of the Ecuadorian labour market, 2007-2019 (ENEMDU, INEC)
+* Set the global below to your project folder. ENEMDU panel data are not included.
+*==============================================================================
+global dir &quot;.&quot;   // change to your project folder
+global data &quot;$dir/DATA&quot;
+global res  &quot;$dir/RESULTS&quot;
+
+************* MULTINOMIAL LOGIT **********************
+* Requires SPost13 (mgen, listcoef): search spost13_ado
+* and outreg: ssc install outreg
+**** Escolaridad*******
+cd &quot;$data/Bases_mlogit&quot;
+     forval m=1/3{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local rlist &quot;i.año_t i.sex_t edad i.estatc_t c.años_es_t##(i.sex_t i.etnia_t)&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `rlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	*generar probabilidades ceteris paribus
+    quietly mgen,  atmeans at(años_es_t=(0(1)23))  stub(escolaridad) replace
+	label var escolaridadpr0 &quot;Adecuado&quot;
+	label var escolaridadpr1 &quot;Sub por tiempo&quot;
+	label var escolaridadpr2 &quot;Sub por ingreso&quot;
+	label var escolaridadpr3 &quot;Otro Inadec&quot;
+	label var escolaridadpr4 &quot;No remunerado&quot;
+	label var escolaridadpr5 &quot;Desempleo&quot;
+	label var escolaridadpr6 &quot;PEI&quot;
+	
+	local xlist escolaridadpr0 escolaridadpr1 escolaridadpr2 escolaridadpr3 escolaridadpr4 escolaridadpr5 escolaridadpr6
+	
+	*graficar
+	graph twoway  (connected escolaridadpr0 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr1 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr2 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr3 escolaridadaños_es_t,msize(tiny) clwidth(medium)) (connected escolaridadpr4 escolaridadaños_es_t,msize(tiny) clwidth(medium)) (connected escolaridadpr5 escolaridadaños_es_t,msize(tiny) clwidth(medium))(connected escolaridadpr6 escolaridadaños_es_t,msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),title(&quot;Años de Escolaridad&quot;, size(medium)) ///
+	 legend(size(small)) ytitle(Probabilidad) xtitle(&quot;años de escolaridad&quot;) xlab(0(2)24) ylab(0(0.1)0.7) legend(rows(3)) scheme (economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/escolaridad.png&quot;, as(png) replace
+
+***Escolaridad por sexo***
+
+forval x=0/1 {
+quietly mgen if(sex_t==`x&#x27;), atmeans at(años_es_t=(0(1)23)) stub(sex`x&#x27;) replace
+
+}
+forval u=0/6 {
+label var sex1pr`u&#x27; &quot;Hombre&quot;
+label var sex0pr`u&#x27; &quot;Mujer&quot;
+}
+
+graph twoway (connected sex1pr0 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr0 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de empleo adecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/adecxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr1 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr1 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de sub por tiempo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subtxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr2 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr2 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de sub por ingresos) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subixsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr3 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr3 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Otro empleo inadecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/otrixsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr4 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr4 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Empleo no remunerado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/norxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr5 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr5 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Desempleo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/desxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr6 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr6 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Inactividad) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/inaxsex.png&quot;, as(png) replace
+
+
+*ESCOLARIDAD POR MINORIA*
+forval x=0/1 {
+quietly mgen if(etnia_t==`x&#x27;), atmeans at(años_es_t=(0(1)23)) stub(mino`x&#x27;) replace
+
+}
+forval u=0/6 {
+label var mino1pr`u&#x27; &quot;Minoria&quot;
+label var mino0pr`u&#x27; &quot;Blanco/Mestizo&quot;
+}
+
+graph twoway (connected mino1pr0 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr0 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de empleo adecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/adecxmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr1 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr1 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de sub por tiempo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subtxmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr2 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr2 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de sub por ingresos) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subixmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr3 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr3 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de Otro empleo inadecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/otrixmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr4 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr4 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de Empleo no remunerado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/norxmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr5 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr5 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de Desempleo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/descxmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr6 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr6 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de Inactividad) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/inaxmin.png&quot;, as(png) replace
+
+}
+
+
+******************************************BDD4-5
+forval m=4/5{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local tlist &quot;i.año_t i.sex_t##i.estatc_t  edad i.etnia_t c.años_es_t##(i.sex_t i.etnia_t) i.area&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `tlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	*generar probabilidades ceteris paribus
+    quietly mgen,  atmeans at(años_es_t=(0(1)23))  stub(escolaridad) replace
+	label var escolaridadpr0 &quot;Adecuado&quot;
+	label var escolaridadpr1 &quot;Sub por tiempo&quot;
+	label var escolaridadpr2 &quot;Sub por ingreso&quot;
+	label var escolaridadpr3 &quot;Otro Inadec&quot;
+	label var escolaridadpr4 &quot;No remunerado&quot;
+	label var escolaridadpr5 &quot;Desempleo&quot;
+	label var escolaridadpr6 &quot;PEI&quot;
+	
+	local xlist escolaridadpr0 escolaridadpr1 escolaridadpr2 escolaridadpr3 escolaridadpr4 escolaridadpr5 escolaridadpr6
+	
+	*graficar
+	graph twoway  (connected escolaridadpr0 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr1 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr2 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr3 escolaridadaños_es_t,msize(tiny) clwidth(medium)) (connected escolaridadpr4 escolaridadaños_es_t,msize(tiny) clwidth(medium)) (connected escolaridadpr5 escolaridadaños_es_t,msize(tiny) clwidth(medium))(connected escolaridadpr6 escolaridadaños_es_t,msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),title(&quot;Años de Escolaridad&quot;, size(medium)) ///
+	legend(size(small)) ytitle(Probabilidad) xtitle(&quot;años de escolaridad&quot;) xlab(0(2)24) ylab(0(0.1)0.7) legend(rows(3)) scheme (economist)
+    graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/escolaridad.png&quot;, as(png) replace
+
+***Escolaridad por sexo***
+forval x=0/1 {
+quietly mgen if(sex_t==`x&#x27;), atmeans at(años_es_t=(0(1)23)) stub(sex`x&#x27;) replace
+
+}
+forval u=0/6 {
+label var sex1pr`u&#x27; &quot;Hombre&quot;
+label var sex0pr`u&#x27; &quot;Mujer&quot;
+}
+
+graph twoway (connected sex1pr0 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr0 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de empleo adecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/adecxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr1 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr1 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de sub por tiempo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subtxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr2 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr2 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de sub por ingresos) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subixsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr3 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr3 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Otro empleo inadecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/otrixsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr4 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr4 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Empleo no remunerado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/norxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr5 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr5 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Desempleo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/desxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr6 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr6 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Inactividad) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/inaxsex.png&quot;, as(png) replace
+
+
+*ESCOLARIDAD POR MINORIA*
+forval x=0/1 {
+quietly mgen if(etnia_t==`x&#x27;), atmeans at(años_es_t=(0(1)23)) stub(mino`x&#x27;) replace
+
+}
+forval u=0/6 {
+label var mino1pr`u&#x27; &quot;Minoria&quot;
+label var mino0pr`u&#x27; &quot;Blanco/Mestizo&quot;
+}
+
+graph twoway (connected mino1pr0 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr0 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de empleo adecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/adecxmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr1 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr1 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de sub por tiempo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subtxmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr2 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr2 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de sub por ingresos) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subixmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr3 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr3 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de Otro empleo inadecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/otrixmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr4 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr4 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de Empleo no remunerado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/norxmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr5 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr5 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de Desempleo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/descxmin.png&quot;, as(png) replace
+
+graph twoway (connected mino1pr6 mino0años_es_t, msize(tiny) clwidth(medium))(connected mino0pr6 mino0años_es_t,  msize(tiny) clwidth(medium) lcolor(green) mcolor(green)) ,  ytitle(Probabilidad de Inactividad) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist)
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/inaxmin.png&quot;, as(png) replace
+
+}
+
+
+*************************************************BDD6
+
+forval m=6/6{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local plist &quot;i.año_t i.sex_t##(i.estatc_t  c.años_es_t) edad i.area&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `plist&#x27; [pw=fexpmatch], base(0) iter(200)
+	*generar probabilidades ceteris paribus
+    quietly mgen,  atmeans at(años_es_t=(0(1)23))  stub(escolaridad) replace
+	label var escolaridadpr0 &quot;Adecuado&quot;
+	label var escolaridadpr1 &quot;Sub por tiempo&quot;
+	label var escolaridadpr2 &quot;Sub por ingreso&quot;
+	label var escolaridadpr3 &quot;Otro Inadec&quot;
+	label var escolaridadpr4 &quot;No remunerado&quot;
+	label var escolaridadpr5 &quot;Desempleo&quot;
+	label var escolaridadpr6 &quot;PEI&quot;
+	
+	local xlist escolaridadpr0 escolaridadpr1 escolaridadpr2 escolaridadpr3 escolaridadpr4 escolaridadpr5 escolaridadpr6
+	
+	*graficar
+	graph twoway  (connected escolaridadpr0 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr1 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr2 escolaridadaños_es_t, msize(tiny) clwidth(medium)) (connected escolaridadpr3 escolaridadaños_es_t,msize(tiny) clwidth(medium)) (connected escolaridadpr4 escolaridadaños_es_t,msize(tiny) clwidth(medium)) (connected escolaridadpr5 escolaridadaños_es_t,msize(tiny) clwidth(medium))(connected escolaridadpr6 escolaridadaños_es_t,msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),title(&quot;Años de Escolaridad&quot;, size(medium)) ///
+	legend(size(small)) ytitle(Probabilidad) xtitle(&quot;años de escolaridad&quot;) xlab(0(2)24) ylab(0(0.1)0.7) legend(rows(3)) scheme (economist)
+    graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/escolaridad.png&quot;, as(png) replace
+
+***Escolaridad por sexo***
+forval x=0/1 {
+quietly mgen if(sex_t==`x&#x27;), atmeans at(años_es_t=(0(1)23)) stub(sex`x&#x27;) replace
+
+}
+forval u=0/6 {
+label var sex1pr`u&#x27; &quot;Hombre&quot;
+label var sex0pr`u&#x27; &quot;Mujer&quot;
+}
+
+graph twoway (connected sex1pr0 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr0 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de empleo adecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/adecxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr1 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr1 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de sub por tiempo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subtxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr2 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr2 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de sub por ingresos) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/subixsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr3 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr3 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Otro empleo inadecuado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/otrixsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr4 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr4 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Empleo no remunerado) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/norxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr5 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr5 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Desempleo) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/desxsex.png&quot;, as(png) replace
+
+graph twoway (connected sex1pr6 sex0años_es_t, msize(tiny) clwidth(medium)) (connected sex0pr6 sex0años_es_t, msize(tiny) clwidth(medium) lcolor(purple) mcolor(purple)),  ytitle(Probabilidad de Inactividad) xlab(0(2)24) ylab(0(0.1)0.6) scheme(economist) 
+graph export &quot;$res/Años_de_escolaridad/BDD`m&#x27;/inaxsex.png&quot;, as(png) replace
+
+}
+
+*************************************Margins******
+**BDD 1-3*
+cd &quot;$data/Bases_mlogit&quot;
+forval m=1/3{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local rlist &quot;i.año_t i.sex_t edad i.estatc_t c.años_es_t##(i.sex_t i.etnia_t)&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `rlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	margins i.año_t i.estatc_t, at(sex_t==1 etnia_t==1 (means) años_es_t edad) dydx(*) post
+	outreg using &quot;$res/margins1_3.doc&quot;, merge replace
+}
+
+  clear 
+  cls
+   outreg, clear
+** BDD 4-5
+forval m=4/5{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local tlist &quot;i.año_t i.sex_t##i.estatc_t  edad i.etnia_t c.años_es_t##(i.sex_t i.etnia_t) i.area&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `tlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	outreg using  &quot;$res/margins4_5.doc&quot;, merge replace	
+}
+   clear 
+   cls
+****BDD6
+forval m=6/6{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local plist &quot;i.año_t i.sex_t##(i.estatc_t  c.años_es_t) edad i.area&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `plist&#x27; [pw=fexpmatch], base(0) iter(200)
+	outreg using &quot;$res/margins6.doc&quot;, merge replace	
+}
+******************************************************************LOGITS PARA ODDS RATIOS*************************************************************************
+***BDD 1-3*
+cd &quot;$data/Bases_mlogit&quot;
+forval m=1/3{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local rlist &quot;i.año_t i.sex_t##i.estatc_t edad c.años_es_t##(i.sex_t i.etnia_t)&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `rlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	di in red &quot;BDD`m&#x27;&quot;
+	listcoef
+}
+ 
+     clear
+	 cls
+*** BDD4-5 
+set matsize 1000	 
+forval m=4/5{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local tlist &quot;i.año_t i.sex_t##i.estatc_t  edad i.etnia_t c.años_es_t##(i.sex_t i.etnia_t) i.area&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `tlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	di in red &quot;BDD`m&#x27;&quot;
+	listcoef
+}
+     
+	 clear
+	 cls
+	 
+	 *** BDD6
+set matsize 1000	
+forval m=6/6 {
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local plist &quot;i.año_t i.sex_t##(i.estatc_t  c.años_es_t) edad i.area&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `plist&#x27; [pw=fexpmatch], base(0) iter(200)
+    di in red &quot;BDD`m&#x27;&quot;
+	listcoef
+}
+
+	****************GRAFICOS Otros ***********************************
+	*** estado civil
+   cd &quot;$data/Bases_mlogit&quot;
+   forval m=1/3{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local rlist &quot;i.año_t i.sex_t edad i.estatc_t c.años_es_t##(i.sex_t i.etnia_t)&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `rlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	**Margins para hombre 
+	**Con pareja 
+	quietly mgen, atmeans at(estatc_t=1 sex_t=1) stub(homcon) replace
+	label var homconpr0 &quot;Hombre con Pareja&quot;
+	label var homconpr1 &quot;Hombre con Pareja&quot;
+	label var homconpr2 &quot;Hombre con Pareja&quot;
+	label var homconpr3 &quot;Hombre con Pareja&quot;
+	label var homconpr4 &quot;Hombre con Pareja&quot;
+	label var homconpr5 &quot;Hombre con Pareja&quot;
+	label var homconpr6 &quot;Hombre con Pareja&quot;
+	*Sin Pareja
+	quietly mgen, atmeans at(estatc_t=0 sex_t=1) stub(homsin) replace
+	label var homsinpr0 &quot;Hombre sin Pareja&quot;
+	label var homsinpr1 &quot;Hombre sin Pareja&quot;
+	label var homsinpr2 &quot;Hombre sin Pareja&quot;
+	label var homsinpr3 &quot;Hombre sin Pareja&quot;
+	label var homsinpr4 &quot;Hombre sin Pareja&quot;
+	label var homsinpr5 &quot;Hombre sin Pareja&quot;
+	label var homsinpr6 &quot;Hombre sin Pareja&quot;
+	*Margins para Mujeres
+	*Con pareja
+	quietly mgen, atmeans at(estatc_t=1 sex_t=0) stub(mujcon) replace
+	label var mujconpr0 &quot;Mujer con Pareja&quot;
+	label var mujconpr1 &quot;Mujer con Pareja&quot;
+	label var mujconpr2 &quot;Mujer con Pareja&quot;
+	label var mujconpr3 &quot;Mujer con Pareja&quot;
+	label var mujconpr4 &quot;Mujer con Pareja&quot;
+	label var mujconpr5 &quot;Mujer con Pareja&quot;
+	label var mujconpr6 &quot;Mujer con Pareja&quot;
+	*Sin pareja
+	quietly mgen, atmeans at(estatc_t=0 sex_t=0) stub(mujsin) replace
+	label var mujsinpr0 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr1 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr2 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr3 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr4 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr5 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr6 &quot;Mujer sin Pareja&quot;
+	
+	
+drop if homconpr1==.
+
+save &quot;$res/Resto_variables/BDD`m&#x27;.dta&quot;, replace
+
+}
+
+clear 
+
+forval m=4/5{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local rlist &quot;i.año_t i.sex_t edad i.estatc_t c.años_es_t##(i.sex_t i.etnia_t)&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `rlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	**Margins para hombre 
+	**Con pareja 
+	quietly mgen, atmeans at(estatc_t=1 sex_t=1) stub(homcon) replace
+	label var homconpr0 &quot;Hombre con Pareja&quot;
+	label var homconpr1 &quot;Hombre con Pareja&quot;
+	label var homconpr2 &quot;Hombre con Pareja&quot;
+	label var homconpr3 &quot;Hombre con Pareja&quot;
+	label var homconpr4 &quot;Hombre con Pareja&quot;
+	label var homconpr5 &quot;Hombre con Pareja&quot;
+	label var homconpr6 &quot;Hombre con Pareja&quot;
+	*Sin Pareja
+	quietly mgen, atmeans at(estatc_t=0 sex_t=1) stub(homsin) replace
+	label var homsinpr0 &quot;Hombre sin Pareja&quot;
+	label var homsinpr1 &quot;Hombre sin Pareja&quot;
+	label var homsinpr2 &quot;Hombre sin Pareja&quot;
+	label var homsinpr3 &quot;Hombre sin Pareja&quot;
+	label var homsinpr4 &quot;Hombre sin Pareja&quot;
+	label var homsinpr5 &quot;Hombre sin Pareja&quot;
+	label var homsinpr6 &quot;Hombre sin Pareja&quot;
+	*Margins para Mujeres
+	*Con pareja
+	quietly mgen, atmeans at(estatc_t=1 sex_t=0) stub(mujcon) replace
+	label var mujconpr0 &quot;Mujer con Pareja&quot;
+	label var mujconpr1 &quot;Mujer con Pareja&quot;
+	label var mujconpr2 &quot;Mujer con Pareja&quot;
+	label var mujconpr3 &quot;Mujer con Pareja&quot;
+	label var mujconpr4 &quot;Mujer con Pareja&quot;
+	label var mujconpr5 &quot;Mujer con Pareja&quot;
+	label var mujconpr6 &quot;Mujer con Pareja&quot;
+	*Sin pareja
+	quietly mgen, atmeans at(estatc_t=0 sex_t=0) stub(mujsin) replace
+	label var mujsinpr0 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr1 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr2 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr3 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr4 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr5 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr6 &quot;Mujer sin Pareja&quot;
+	
+	
+drop if homconpr1==.
+
+save &quot;$res/Resto_variables/BDD`m&#x27;.dta&quot;, replace
+
+}
+
+forval m=6/6{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local plist &quot;i.año_t i.sex_t##(i.estatc_t  c.años_es_t) edad i.area&quot;  // este cambia para cada año por el año 
+	quietly mlogit condactnt `plist&#x27; [pw=fexpmatch], base(0) iter(200)
+	**Margins para hombre 
+	**Con pareja 
+	quietly mgen, atmeans at(estatc_t=1 sex_t=1) stub(homcon) replace
+	label var homconpr0 &quot;Hombre con Pareja&quot;
+	label var homconpr1 &quot;Hombre con Pareja&quot;
+	label var homconpr2 &quot;Hombre con Pareja&quot;
+	label var homconpr3 &quot;Hombre con Pareja&quot;
+	label var homconpr4 &quot;Hombre con Pareja&quot;
+	label var homconpr5 &quot;Hombre con Pareja&quot;
+	label var homconpr6 &quot;Hombre con Pareja&quot;
+	*Sin Pareja
+	quietly mgen, atmeans at(estatc_t=0 sex_t=1) stub(homsin) replace
+	label var homsinpr0 &quot;Hombre sin Pareja&quot;
+	label var homsinpr1 &quot;Hombre sin Pareja&quot;
+	label var homsinpr2 &quot;Hombre sin Pareja&quot;
+	label var homsinpr3 &quot;Hombre sin Pareja&quot;
+	label var homsinpr4 &quot;Hombre sin Pareja&quot;
+	label var homsinpr5 &quot;Hombre sin Pareja&quot;
+	label var homsinpr6 &quot;Hombre sin Pareja&quot;
+	*Margins para Mujeres
+	*Con pareja
+	quietly mgen, atmeans at(estatc_t=1 sex_t=0) stub(mujcon) replace
+	label var mujconpr0 &quot;Mujer con Pareja&quot;
+	label var mujconpr1 &quot;Mujer con Pareja&quot;
+	label var mujconpr2 &quot;Mujer con Pareja&quot;
+	label var mujconpr3 &quot;Mujer con Pareja&quot;
+	label var mujconpr4 &quot;Mujer con Pareja&quot;
+	label var mujconpr5 &quot;Mujer con Pareja&quot;
+	label var mujconpr6 &quot;Mujer con Pareja&quot;
+	*Sin pareja
+	quietly mgen, atmeans at(estatc_t=0 sex_t=0) stub(mujsin) replace
+	label var mujsinpr0 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr1 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr2 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr3 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr4 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr5 &quot;Mujer sin Pareja&quot;
+	label var mujsinpr6 &quot;Mujer sin Pareja&quot;
+	
+	
+drop if homconpr1==.
+
+save &quot;$res/Resto_variables/BDD`m&#x27;.dta&quot;, replace
+
+}
+
+
+
+clear all 
+cd &quot;$res/Resto_variables&quot;
+use BDD1
+
+merge m:m homconpr0 homconpr1 homconpr2 homconpr3 homconpr4 homconpr5 homconpr6 homsinpr0 homsinpr1 homsinpr2 homsinpr3 homsinpr4 homsinpr5 homsinpr6 mujconpr0 mujconpr1 mujconpr2 mujconpr3 mujconpr4 mujconpr5 mujconpr6 mujsinpr0 mujsinpr1 mujsinpr2 mujsinpr3 mujsinpr4 mujsinpr5 mujsinpr6 using BDD2, nogen
+merge m:m homconpr0 homconpr1 homconpr2 homconpr3 homconpr4 homconpr5 homconpr6 homsinpr0 homsinpr1 homsinpr2 homsinpr3 homsinpr4 homsinpr5 homsinpr6 mujconpr0 mujconpr1 mujconpr2 mujconpr3 mujconpr4 mujconpr5 mujconpr6 mujsinpr0 mujsinpr1 mujsinpr2 mujsinpr3 mujsinpr4 mujsinpr5 mujsinpr6 using BDD3, nogen
+merge m:m homconpr0 homconpr1 homconpr2 homconpr3 homconpr4 homconpr5 homconpr6 homsinpr0 homsinpr1 homsinpr2 homsinpr3 homsinpr4 homsinpr5 homsinpr6 mujconpr0 mujconpr1 mujconpr2 mujconpr3 mujconpr4 mujconpr5 mujconpr6 mujsinpr0 mujsinpr1 mujsinpr2 mujsinpr3 mujsinpr4 mujsinpr5 mujsinpr6 using BDD4, nogen
+merge m:m homconpr0 homconpr1 homconpr2 homconpr3 homconpr4 homconpr5 homconpr6 homsinpr0 homsinpr1 homsinpr2 homsinpr3 homsinpr4 homsinpr5 homsinpr6 mujconpr0 mujconpr1 mujconpr2 mujconpr3 mujconpr4 mujconpr5 mujconpr6 mujsinpr0 mujsinpr1 mujsinpr2 mujsinpr3 mujsinpr4 mujsinpr5 mujsinpr6 using BDD5, nogen
+merge m:m homconpr0 homconpr1 homconpr2 homconpr3 homconpr4 homconpr5 homconpr6 homsinpr0 homsinpr1 homsinpr2 homsinpr3 homsinpr4 homsinpr5 homsinpr6 mujconpr0 mujconpr1 mujconpr2 mujconpr3 mujconpr4 mujconpr5 mujconpr6 mujsinpr0 mujsinpr1 mujsinpr2 mujsinpr3 mujsinpr4 mujsinpr5 mujsinpr6 using BDD6, nogen
+
+gen periodo=_n
+label define periodo_lbl 1&quot;2007-2008&quot; 2&quot;2009-2010&quot; 3&quot;2011-2012&quot; 4&quot;2013-2014&quot; 5&quot;2015-2016&quot; 6&quot;2018-2019&quot;
+label value periodo periodo_lbl
+
+forval x=0/6 {
+graph twoway dot homconpr`x&#x27; homsinpr`x&#x27; mujconpr`x&#x27; mujsinpr`x&#x27; periodo, xlabel(, valuelabel angle(45))  xtitle(&quot;&quot;) ytitle(Probabilidad) msize(large large large large) scheme(vg_s1c)
+graph export &quot;$res/Resto_variables/graficos/Categoria`x&#x27;.png&quot;, as(png) replace
+}
+
+
+gr combine Categoria0.gph Categoria1.gph //revisar no sale
+
+*************edad 
+
+cd &quot;$data/Bases_mlogit&quot;
+     forval m=1/3{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local rlist &quot;i.año_t i.sex_t edad i.estatc_t i.etnia_t c.años_es_t##(i.sex_t i.etnia_t)&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `rlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	*generar probabilidades ceteris paribus
+    quietly mgen,  atmeans at(edad=(0(1)98))  stub(edad) replace
+	label var edadpr0 &quot;Adecuado&quot;
+	label var edadpr1 &quot;Sub por tiempo&quot;
+	label var edadpr2 &quot;Sub por ingreso&quot;
+	label var edadpr3 &quot;Otro Inadec&quot;
+	label var edadpr4 &quot;No remunerado&quot;
+	label var edadpr5 &quot;Desempleo&quot;
+	label var edadpr6 &quot;PEI&quot;
+	
+	local xlist  edadpr0 edadpr1 edadpr3 edadpr4 edadpr5 edadpr6 
+	
+	*graficar
+	graph twoway  (line edadpr0 edadedad if edadedad&gt;=15 , msize(tiny) clwidth(thick)) (line edadpr1 edadedad if edadedad&gt;=15, msize(tiny) clwidth(thick)) (line edadpr2 edadedad if edadedad&gt;=15, msize(tiny) clwidth(thick)) (line edadpr3 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick)) (line edadpr4 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick)) (line edadpr5 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick))(line edadpr6 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick) lcolor(purple) mcolor(purple)),title(&quot;Edad&quot;, size(medium)) ///
+	 legend(size(small)) ytitle(Probabilidad) xtitle(&quot;edad&quot;) xlab(15(10)100) ylab(0(0.1)0.6) legend(rows(3)) scheme (economist)
+	 graph export &quot;$res/Edad/BDD`m&#x27;/Edad.png&quot;,as(png) replace
+	
+	}
+	
+
+	forval m=4/5{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+    local tlist &quot;i.Año i.Sexo##i.ESTCIV Edad  i.minoria c.escol##(i.Sexo i.minoria) i.area&quot;
+	quietly mlogit condactnt `tlist&#x27; [pw=fexpmatch], base(0) iter(200)
+	*generar probabilidades ceteris paribus
+    quietly mgen,  atmeans at(edad=(0(1)98))  stub(edad) replace
+	label var edadpr0 &quot;Adecuado&quot;
+	label var edadpr1 &quot;Sub por tiempo&quot;
+	label var edadpr2 &quot;Sub por ingreso&quot;
+	label var edadpr3 &quot;Otro Inadec&quot;
+	label var edadpr4 &quot;No remunerado&quot;
+	label var edadpr5 &quot;Desempleo&quot;
+	label var edadpr6 &quot;PEI&quot;
+	
+	local xlist  edadpr0 edadpr1 edadpr3 edadpr4 edadpr5 edadpr6 
+	
+	*graficar
+	graph twoway  (line edadpr0 edadedad if edadedad&gt;=15 , msize(tiny) clwidth(thick)) (line edadpr1 edadedad if edadedad&gt;=15, msize(tiny) clwidth(thick)) (line edadpr2 edadedad if edadedad&gt;=15, msize(tiny) clwidth(thick)) (line edadpr3 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick)) (line edadpr4 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick)) (line edadpr5 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick))(line edadpr6 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick) lcolor(purple) mcolor(purple)),title(&quot;Edad&quot;, size(medium)) ///
+	 legend(size(small)) ytitle(Probabilidad) xtitle(&quot;edad&quot;) xlab(15(10)100) ylab(0(0.1)0.6) legend(rows(3)) scheme (economist)
+	 graph export &quot;$res/Edad/BDD`m&#x27;/Edad.png&quot;,as(png) replace
+	
+	}
+	
+	forval m=6/6{
+	 use BDD`m&#x27;, clear
+	*Correr el modelo*
+	local plist &quot;i.año_t i.sex_t##(i.estatc_t  c.años_es_t) edad i.area&quot; // este cambia para cada año por el año 
+	quietly mlogit condactnt `plist&#x27; [pw=fexpmatch], base(0) iter(200)
+	*generar probabilidades ceteris paribus
+    quietly mgen,  atmeans at(edad=(0(1)98))  stub(edad) replace
+	label var edadpr0 &quot;Adecuado&quot;
+	label var edadpr1 &quot;Sub por tiempo&quot;
+	label var edadpr2 &quot;Sub por ingreso&quot;
+	label var edadpr3 &quot;Otro Inadec&quot;
+	label var edadpr4 &quot;No remunerado&quot;
+	label var edadpr5 &quot;Desempleo&quot;
+	label var edadpr6 &quot;PEI&quot;
+	
+	local xlist  edadpr0 edadpr1 edadpr3 edadpr4 edadpr5 edadpr6 
+	
+	*graficar
+	graph twoway  (line edadpr0 edadedad if edadedad&gt;=15 , msize(tiny) clwidth(thick)) (line edadpr1 edadedad if edadedad&gt;=15, msize(tiny) clwidth(thick)) (line edadpr2 edadedad if edadedad&gt;=15, msize(tiny) clwidth(thick)) (line edadpr3 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick)) (line edadpr4 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick)) (line edadpr5 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick))(line edadpr6 edadedad if edadedad&gt;=15,msize(tiny) clwidth(thick) lcolor(purple) mcolor(purple)),title(&quot;Edad&quot;, size(medium)) ///
+	 legend(size(small)) ytitle(Probabilidad) xtitle(&quot;edad&quot;) xlab(15(10)100) ylab(0(0.1)0.6) legend(rows(3)) scheme (economist)
+	 graph export &quot;$res/Edad/BDD`m&#x27;/Edad.png&quot;,as(png) replace
+	
+	}
+</code></pre>
+      </details>
+    </div>
 
     <div class="group">
       <h3 class="group-title">RWI – Weather Shocks and Migration in Senegal</h3>
