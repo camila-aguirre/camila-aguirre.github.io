@@ -91,6 +91,10 @@
   .group:first-of-type { margin-top: 18px; }
   .group-title { font-size: 17px; color: var(--accent); margin: 0 0 4px; }
   .group-note { color: var(--muted); font-size: 15px; margin: 0; }
+  .gallery { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 10px; }
+  .gallery img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; display: block; }
+  .gallery a:hover img { border-color: var(--accent); }
+  .gallery-note { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
 </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -5557,6 +5561,20 @@ restore</code></pre>
       </details>
     </div>
 
+    <div class="code">
+      <h3>6. Network Visualisation of the Topographic-IV Literature (Gephi)</h3>
+      <p>Network graphs built in Gephi from a structured review of 447 studies that use topographic variation (slope, elevation, ruggedness) as an instrumental variable. Each node is a variable; arrows link topography to the treatments it instruments (orange) and to the outcomes studied downstream (blue and red), revealing how many different channels the same instrument has been used for. Prepared for the RWI working paper <em>A Slippery Slope: Topographic Variation as an Instrumental Variable</em> (Haveresch, Ankel-Peters &amp; Bensch).</p>
+      <p><span class="tag">Gephi</span><span class="tag">Network analysis</span><span class="tag">Literature review</span></p>
+      <details class="code-details">
+        <summary data-closed="Show figures" data-open="Hide figures">Show figures</summary>
+        <div class="gallery">
+          <a href="img/gephi_network_1.png" target="_blank"><img src="img/gephi_network_1.png" alt="Gephi network of variables linked to topographic variation, version 1" loading="lazy"></a>
+          <a href="img/gephi_network_2.png" target="_blank"><img src="img/gephi_network_2.png" alt="Gephi network of variables linked to topographic variation, version 2" loading="lazy"></a>
+          <a href="img/gephi_network_3.png" target="_blank"><img src="img/gephi_network_3.png" alt="Gephi network of variables linked to topographic variation, version 3" loading="lazy"></a>
+        </div>
+        <p class="gallery-note">Click on a figure to open it in full size.</p>
+      </details>
+    </div>
     <div class="group">
       <h3 class="group-title">Macroeconomic Statistics – Argentina and Costa Rica</h3>
       <p class="group-note">Two applied exercises with official statistics: tradable and non-tradable consumer prices in Argentina (INDEC), and inward FDI in Costa Rica reconciling the International Investment Position with the Balance of Payments (IMF, BPM6). Scripts download the public data and produce the figures end to end.</p>
@@ -7046,7 +7064,7 @@ lines equals the accumulated OVAP residual.
   if (window.hljs) hljs.highlightAll();
   document.querySelectorAll('.code-details').forEach(function (d) {
     var s = d.querySelector('summary');
-    d.addEventListener('toggle', function () { s.textContent = d.open ? 'Hide code' : 'Show code'; });
+    d.addEventListener('toggle', function () { s.textContent = d.open ? (s.dataset.open || 'Hide code') : (s.dataset.closed || 'Show code'); });
   });
   document.querySelectorAll('.copy-btn').forEach(function (b) {
     b.addEventListener('click', function () {
